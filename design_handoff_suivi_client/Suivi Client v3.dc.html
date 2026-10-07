@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"><style>
+body{margin:0;background:#F1E6E8;color:#3A2E2B;font-family:"Montserrat",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*,*::before,*::after{box-sizing:border-box}
+a{color:#A77791;text-underline-offset:3px}
+a:hover{color:#8A5F79}
+button,input,textarea{font-family:inherit}
+:focus{outline:none}
+:focus-visible{outline:2px solid #B88AA2;outline-offset:2px}
+::selection{background:#DCB6C8}
+.scr::-webkit-scrollbar{width:0}
+</style></helmet>
+
+<div style="min-height:100vh;padding:28px 24px 56px;display:flex;flex-direction:column;align-items:center;gap:20px;background:#F1E6E8">
+
+  <div style="width:100%;max-width:760px;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px">
+    <span style="font:700 20px/1 'Playfair Display',serif;letter-spacing:-.02em">Suivi client</span>
+    <span style="font:400 13px/1.4 'Montserrat',sans-serif;color:#8B7D7A">accueil par statut · stats · contacts · réglages</span>
+  </div>
+
+  <div style="width:390px;max-width:100%;height:812px;border-radius:38px;background:#FAF7F5;display:flex;flex-direction:column;overflow:hidden;position:relative;box-shadow:0 1px 2px rgba(58,46,43,.06),0 18px 44px rgba(58,46,43,.14);border:1px solid #E8DADA">
+
+    <div style="flex:none;display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;font:600 12px/1 'Montserrat',sans-serif;color:#8B7D7A">
+      <span>9:41</span>
+      <span>mer. 16 sept.</span>
+    </div>
+
+    <!-- ══ ACCUEIL ══ -->
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+      <div class="scr" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:8px 16px 96px">
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font:700 24px/1.1 'Playfair Display',serif;letter-spacing:-.025em">Atelier</span>
+          <button onClick="{{ goAdd }}" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:9px 13px;border:0;border-radius:999px;background:#B88AA2;color:#ffffff;font:600 12px/1 'Montserrat',sans-serif;box-shadow:0 6px 16px rgba(184,138,162,.24)" style-hover="background:#A77791">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>Nouvelle fiche</span>
+          </button>
+        </div>
+
+        <sc-for list="{{ sections }}" as="sec" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:9px;padding:0 4px">
+              <span style="flex:none;width:9px;height:9px;border-radius:999px;background:{{ sec.dot }}"></span>
+              <span style="flex:1;min-width:0;font:600 16px/1.1 'Montserrat',sans-serif;letter-spacing:-.01em">{{ sec.title }}</span>
+              <span style="flex:none;font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ sec.countLabel }}</span>
+            </div>
+            <div style="background:#ffffff;border-radius:24px;padding:6px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+              <sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="3">
+                <button onClick="{{ r.open }}" style="cursor:pointer;text-align:left;background:transparent;border:0;border-radius:18px;padding:12px;display:flex;gap:12px;align-items:center" style-hover="background:#F7EDEF">
+                  <div style="flex:none;width:42px;height:42px;border-radius:14px;background:{{ r.sqBg }};color:{{ r.sqFg }};display:flex;align-items:center;justify-content:center;font:600 14px/1 'Montserrat',sans-serif">{{ r.initials }}</div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                    <span style="font:600 15px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+                    <span style="font:400 12px/1.35 'Montserrat',sans-serif;color:#8B7D7A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.item }}</span>
+                    <span style="font:500 11px/1.2 'Montserrat',sans-serif;color:{{ r.metaFg }}">{{ r.meta }}</span>
+                  </div>
+                  <div style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+                    <span style="font:600 15px/1 'Montserrat',sans-serif">{{ r.priceLabel }}</span>
+                    <sc-if value="{{ r.late }}" hint-placeholder-val="{{ false }}">
+                      <span style="font:600 10px/1 'Montserrat',sans-serif;padding:4px 8px;border-radius:999px;background:#D67B7B;color:#ffffff">Retard</span>
+                    </sc-if>
+                  </div>
+                </button>
+              </sc-for>
+              <sc-if value="{{ sec.empty }}" hint-placeholder-val="{{ false }}">
+                <span style="font:400 13px/1.4 'Montserrat',sans-serif;color:#8B7D7A;padding:18px 14px">{{ sec.emptyLabel }}</span>
+              </sc-if>
+              <sc-if value="{{ sec.hasMore }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ sec.toggle }}" style="cursor:pointer;margin:2px 6px 6px;padding:11px;border:0;border-radius:14px;background:#F7EDEF;color:#A77791;font:600 12px/1 'Montserrat',sans-serif" style-hover="background:#EFE0E4">{{ sec.moreLabel }}</button>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+
+        <button onClick="{{ goList }}" style="cursor:pointer;width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:15px 18px;background:#ffffff;border:1px solid #E8DADA;border-radius:18px;font:600 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B" style-hover="background:#F7EDEF">
+          <span>Toutes les transactions</span>
+          <span style="font:500 13px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ totalCount }} →</span>
+        </button>
+      </div>
+    </sc-if>
+
+    <!-- ══ LISTE ══ -->
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 12px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onClick="{{ goHome }}" style="cursor:pointer;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #E8DADA;color:#3A2E2B" style-hover="background:#F7EDEF">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <span style="font:700 20px/1 'Playfair Display',serif;letter-spacing:-.02em">Transactions</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;display:flex;align-items:center;gap:9px;padding:0 14px;border:1px solid #E8DADA;border-radius:16px;background:#ffffff">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B7D7A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+            <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Nom, prestation, note…" style="flex:1;min-width:0;border:0;background:transparent;padding:13px 0;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+          </div>
+          <button onClick="{{ toggleFilters }}" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:0 14px;border:1px solid {{ filtBd }};border-radius:16px;background:{{ filtBg }};color:{{ filtFg }};font:600 13px/1 'Montserrat',sans-serif">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="17" x2="20" y2="17"></line><circle cx="9.5" cy="7" r="2.6" fill="currentColor" stroke="none"></circle><circle cx="15" cy="17" r="2.6" fill="currentColor" stroke="none"></circle></svg>
+            <span>{{ filtLabel }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="scr" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:0 16px 96px">
+        <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#ffffff;border:1px solid #E8DADA;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ filterGroups }}" as="g" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ g.label }}</span>
+                <div style="display:flex;flex-wrap:wrap;gap:7px">
+                  <sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="3">
+                    <button onClick="{{ o.select }}" style="cursor:pointer;font:500 12px/1 'Montserrat',sans-serif;padding:9px 12px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ customPeriod }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:10px;padding:12px;background:#FAF7F5;border-radius:16px">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                  <label style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Du</label>
+                  <input type="date" value="{{ fFrom }}" onChange="{{ onFrom }}" style="width:100%;border:1px solid #E8DADA;border-radius:12px;background:#ffffff;padding:10px;font:400 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                  <label style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Au</label>
+                  <input type="date" value="{{ fTo }}" onChange="{{ onTo }}" style="width:100%;border:1px solid #E8DADA;border-radius:12px;background:#ffffff;padding:10px;font:400 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+                </div>
+              </div>
+            </sc-if>
+            <button onClick="{{ resetFilters }}" style="cursor:pointer;align-self:flex-start;background:transparent;border:0;padding:2px;font:600 13px/1 'Montserrat',sans-serif;color:#A77791">Réinitialiser</button>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 4px">
+          <span style="font:600 13px/1 'Montserrat',sans-serif">{{ resultLabel }}</span>
+          <span style="font:400 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ resultSum }}</span>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:6px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <sc-for list="{{ filtered }}" as="r" hint-placeholder-count="8">
+            <button onClick="{{ r.open }}" style="cursor:pointer;text-align:left;background:transparent;border:0;border-radius:18px;padding:12px;display:flex;gap:12px;align-items:center" style-hover="background:#F7EDEF">
+              <div style="flex:none;width:42px;height:42px;border-radius:14px;background:{{ r.sqBg }};color:{{ r.sqFg }};display:flex;align-items:center;justify-content:center;font:600 14px/1 'Montserrat',sans-serif">{{ r.initials }}</div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                <span style="font:600 15px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+                <span style="font:400 12px/1.35 'Montserrat',sans-serif;color:#8B7D7A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.item }}</span>
+                <div style="display:flex;gap:6px;margin-top:1px">
+                  <span style="font:500 10px/1 'Montserrat',sans-serif;padding:4px 8px;border-radius:999px;background:{{ r.stBg }};color:{{ r.stFg }}">{{ r.status }}</span>
+                  <span style="font:500 10px/1 'Montserrat',sans-serif;padding:4px 8px;border-radius:999px;background:{{ r.payBg }};color:{{ r.payFg }}">{{ r.payLabel }}</span>
+                </div>
+              </div>
+              <div style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+                <span style="font:600 15px/1 'Montserrat',sans-serif">{{ r.priceLabel }}</span>
+                <span style="font:400 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ r.dropLabel }}</span>
+              </div>
+            </button>
+          </sc-for>
+          <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:32px 14px;display:flex;flex-direction:column;gap:5px">
+              <span style="font:600 16px/1.2 'Montserrat',sans-serif">Aucun résultat</span>
+              <span style="font:400 13px/1.4 'Montserrat',sans-serif;color:#8B7D7A">Essaie un autre nom ou enlève un filtre.</span>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ STATISTIQUES ══ -->
+    <sc-if value="{{ isStats }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 12px">
+        <span style="font:700 22px/1.1 'Playfair Display',serif;letter-spacing:-.02em">Statistiques</span>
+      </div>
+
+      <div class="scr" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:0 16px 96px">
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <sc-for list="{{ periodOpts }}" as="o" hint-placeholder-count="5">
+            <button onClick="{{ o.select }}" style="cursor:pointer;font:500 12px/1 'Montserrat',sans-serif;padding:9px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ statCustom }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;padding:12px;background:#ffffff;border:1px solid #E8DADA;border-radius:18px">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+              <label style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Du</label>
+              <input type="date" value="{{ pFrom }}" onChange="{{ onPFrom }}" style="width:100%;border:1px solid #E8DADA;border-radius:12px;background:#FAF7F5;padding:10px;font:400 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+              <label style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Au</label>
+              <input type="date" value="{{ pTo }}" onChange="{{ onPTo }}" style="width:100%;border:1px solid #E8DADA;border-radius:12px;background:#FAF7F5;padding:10px;font:400 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="background:#B88AA2;border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:18px;box-shadow:0 10px 26px rgba(184,138,162,.3)">
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font:500 13px/1 'Montserrat',sans-serif;color:#ffffff">{{ periodLabel }} · encaissé</span>
+            <span style="font:700 44px/1 'Playfair Display',serif;letter-spacing:-.035em;color:#ffffff">{{ periodPaid }}</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1;background:rgba(255,255,255,.12);border-radius:16px;padding:11px 13px;display:flex;flex-direction:column;gap:3px">
+              <span style="font:500 11px/1 'Montserrat',sans-serif;color:#ffffff">En attente</span>
+              <span style="font:700 18px/1.1 'Playfair Display',serif;color:#ffffff">{{ periodUnpaid }}</span>
+            </div>
+            <div style="flex:1;background:rgba(255,255,255,.12);border-radius:16px;padding:11px 13px;display:flex;flex-direction:column;gap:3px">
+              <span style="font:500 11px/1 'Montserrat',sans-serif;color:#ffffff">Travaux</span>
+              <span style="font:700 18px/1.1 'Playfair Display',serif;color:#ffffff">{{ periodCount }}</span>
+            </div>
+            <div style="flex:1;background:rgba(255,255,255,.12);border-radius:16px;padding:11px 13px;display:flex;flex-direction:column;gap:3px">
+              <span style="font:500 11px/1 'Montserrat',sans-serif;color:#ffffff">Moyen</span>
+              <span style="font:700 18px/1.1 'Playfair Display',serif;color:#ffffff">{{ periodAvg }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;align-items:center;gap:18px">
+            <div style="flex:none;width:132px;height:132px;border-radius:999px;background:{{ donut }};display:flex;align-items:center;justify-content:center">
+              <div style="width:88px;height:88px;border-radius:999px;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+                <span style="font:700 18px/1 'Playfair Display',serif;letter-spacing:-.02em">{{ periodTotal }}</span>
+                <span style="font:400 10px/1 'Montserrat',sans-serif;color:#8B7D7A">facturé</span>
+              </div>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ slices }}" as="s" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:none;width:10px;height:10px;border-radius:3px;background:{{ s.color }}"></span>
+                  <span style="flex:1;min-width:0;font:500 12px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.label }}</span>
+                  <span style="flex:none;font:600 12px/1 'Montserrat',sans-serif">{{ s.pctLabel }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ slices }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid #F2E7E9">
+                <span style="font:400 13px/1.2 'Montserrat',sans-serif;color:#8B7D7A">{{ s.label }}</span>
+                <span style="font:600 13px/1.2 'Montserrat',sans-serif">{{ s.amount }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;background:#ffffff;border-radius:24px;padding:18px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <span style="font:600 15px/1 'Montserrat',sans-serif">Classement</span>
+          <div style="display:flex;flex-wrap:wrap;gap:7px">
+            <sc-for list="{{ setOpts }}" as="o" hint-placeholder-count="5">
+              <button onClick="{{ o.select }}" style="cursor:pointer;font:500 12px/1 'Montserrat',sans-serif;padding:9px 12px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+          <span style="font:400 12px/1.4 'Montserrat',sans-serif;color:#8B7D7A">{{ rankHint }}</span>
+          <div style="display:flex;flex-direction:column;gap:9px;margin-top:6px">
+            <div style="display:flex;align-items:flex-end;gap:9px;height:156px;border-bottom:1px solid #E8DADA;padding-bottom:2px">
+              <sc-for list="{{ ranking }}" as="r" hint-placeholder-count="5">
+                <div style="flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px">
+                  <span style="font:600 12px/1 'Montserrat',sans-serif">{{ r.value }}</span>
+                  <div style="width:100%;height:{{ r.h }};min-height:8px;border-radius:10px 10px 0 0;background:{{ r.color }}"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;gap:9px">
+              <sc-for list="{{ ranking }}" as="r" hint-placeholder-count="5">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center">
+                  <span style="font:500 10px/1.25 'Montserrat',sans-serif;color:#3A2E2B">{{ r.short }}</span>
+                  <span style="font:400 9px/1.2 'Montserrat',sans-serif;color:#8B7D7A">{{ r.sub2 }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ rankEmpty }}" hint-placeholder-val="{{ false }}">
+              <span style="font:400 13px/1.4 'Montserrat',sans-serif;color:#8B7D7A">Rien sur cette période.</span>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ CONTACTS ══ -->
+    <sc-if value="{{ isContacts }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 12px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+          <span style="font:700 22px/1.1 'Playfair Display',serif;letter-spacing:-.02em">Contacts</span>
+          <span style="font:400 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ clientCount }} clientes</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:0 14px;border:1px solid #E8DADA;border-radius:16px;background:#ffffff">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B7D7A" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line></svg>
+          <input value="{{ cQuery }}" onChange="{{ onCQuery }}" placeholder="Chercher une cliente…" style="flex:1;min-width:0;border:0;background:transparent;padding:13px 0;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+        </div>
+      </div>
+
+      <div class="scr" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:0 16px 96px">
+        <button onClick="{{ goAddContact }}" style="cursor:pointer;width:100%;display:flex;align-items:center;gap:10px;padding:14px 16px;background:#F3E3EA;border:0;border-radius:18px;font:600 14px/1.2 'Montserrat',sans-serif;color:#8A5F79" style-hover="background:#DCB6C8">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Ajouter une cliente</span>
+        </button>
+
+        <div style="background:#ffffff;border-radius:24px;padding:6px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <sc-for list="{{ clients }}" as="c" hint-placeholder-count="8">
+            <button onClick="{{ c.open }}" style="cursor:pointer;text-align:left;background:transparent;border:0;border-radius:18px;padding:12px;display:flex;gap:12px;align-items:center" style-hover="background:#F7EDEF">
+              <div style="flex:none;width:42px;height:42px;border-radius:999px;background:{{ c.avBg }};color:{{ c.avFg }};display:flex;align-items:center;justify-content:center;font:600 14px/1 'Montserrat',sans-serif">{{ c.initials }}</div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                <span style="font:600 15px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+                <span style="font:400 12px/1.3 'Montserrat',sans-serif;color:#8B7D7A">{{ c.sub }}</span>
+              </div>
+              <span style="flex:none;font:600 14px/1 'Montserrat',sans-serif">{{ c.total }}</span>
+            </button>
+          </sc-for>
+          <sc-if value="{{ noClients }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:30px 14px;display:flex;flex-direction:column;gap:5px">
+              <span style="font:600 16px/1.2 'Montserrat',sans-serif">Aucune cliente</span>
+              <span style="font:400 13px/1.4 'Montserrat',sans-serif;color:#8B7D7A">Essaie un autre nom.</span>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ FICHE CLIENTE ══ -->
+    <sc-if value="{{ isClient }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 10px;display:flex;align-items:center;gap:10px">
+        <button onClick="{{ goContacts }}" style="cursor:pointer;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #E8DADA;color:#3A2E2B" style-hover="background:#F7EDEF">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Fiche cliente</span>
+      </div>
+
+      <div class="scr" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:0 16px 96px">
+        <div style="background:#ffffff;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;gap:14px;align-items:center">
+            <div style="flex:none;width:56px;height:56px;border-radius:999px;background:{{ cli.avBg }};color:{{ cli.avFg }};display:flex;align-items:center;justify-content:center;font:600 18px/1 'Montserrat',sans-serif">{{ cli.initials }}</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+              <span style="font:700 22px/1.1 'Playfair Display',serif;letter-spacing:-.02em">{{ cli.name }}</span>
+              <span style="font:400 13px/1.3 'Montserrat',sans-serif;color:#8B7D7A">{{ cli.phone }}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1;background:#F7EDEF;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:3px">
+              <span style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Total dépensé</span>
+              <span style="font:700 16px/1.1 'Montserrat',sans-serif">{{ cli.total }}</span>
+            </div>
+            <div style="flex:1;background:#F7EDEF;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:3px">
+              <span style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Travaux</span>
+              <span style="font:700 16px/1.1 'Montserrat',sans-serif">{{ cli.count }}</span>
+            </div>
+            <div style="flex:1;background:#F7EDEF;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:3px">
+              <span style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Dernier</span>
+              <span style="font:700 16px/1.1 'Montserrat',sans-serif">{{ cli.last }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 4px">
+          <span style="font:600 15px/1 'Montserrat',sans-serif">Historique</span>
+          <span style="font:400 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ cli.unpaidLabel }}</span>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:6px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <sc-for list="{{ cli.rows }}" as="r" hint-placeholder-count="3">
+            <button onClick="{{ r.openFromClient }}" style="cursor:pointer;text-align:left;background:transparent;border:0;border-radius:18px;padding:12px;display:flex;gap:12px;align-items:center" style-hover="background:#F7EDEF">
+              <div style="flex:none;width:8px;height:38px;border-radius:999px;background:{{ r.sqBg }}"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                <span style="font:600 14px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.item }}</span>
+                <div style="display:flex;gap:6px">
+                  <span style="font:500 10px/1 'Montserrat',sans-serif;padding:4px 8px;border-radius:999px;background:{{ r.stBg }};color:{{ r.stFg }}">{{ r.status }}</span>
+                  <span style="font:500 10px/1 'Montserrat',sans-serif;padding:4px 8px;border-radius:999px;background:{{ r.payBg }};color:{{ r.payFg }}">{{ r.payLabel }}</span>
+                </div>
+              </div>
+              <div style="flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                <span style="font:600 14px/1 'Montserrat',sans-serif">{{ r.priceLabel }}</span>
+                <span style="font:400 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ r.dropLabel }}</span>
+              </div>
+            </button>
+          </sc-for>
+          <sc-if value="{{ cli.empty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:26px 14px;display:flex;flex-direction:column;gap:5px">
+              <span style="font:600 15px/1.2 'Montserrat',sans-serif">Pas encore de transaction</span>
+              <span style="font:400 13px/1.4 'Montserrat',sans-serif;color:#8B7D7A">Crée une fiche pour cette cliente.</span>
+            </div>
+          </sc-if>
+        </div>
+
+        <button onClick="{{ addForClient }}" style="cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;background:#B88AA2;color:#ffffff;border:0;border-radius:18px;font:600 15px/1.2 'Montserrat',sans-serif;box-shadow:0 8px 20px rgba(184,138,162,.26)" style-hover="background:#A77791">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Nouvelle transaction</span>
+        </button>
+      </div>
+    </sc-if>
+
+    <!-- ══ DÉTAIL TRANSACTION ══ -->
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 10px;display:flex;align-items:center;gap:10px">
+        <button onClick="{{ goBack }}" style="cursor:pointer;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #E8DADA;color:#3A2E2B" style-hover="background:#F7EDEF">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <span style="flex:1;min-width:0;font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Fiche {{ sel.ref }}</span>
+        <button onClick="{{ goEdit }}" style="cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 13px;border:1px solid #E8DADA;border-radius:999px;background:#ffffff;color:#3A2E2B;font:600 12px/1 'Montserrat',sans-serif" style-hover="background:#F7EDEF">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="M14 6l4 4"></path></svg>
+          <span>Modifier</span>
+        </button>
+      </div>
+
+      <div class="scr" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:0 16px 96px">
+        <div style="background:{{ sel.heroBg }};border-radius:26px;padding:22px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font:500 12px/1 'Montserrat',sans-serif;color:{{ sel.heroMuted }}">{{ sel.cat }}</span>
+            <span style="font:700 26px/1.1 'Playfair Display',serif;letter-spacing:-.025em;color:{{ sel.heroFg }}">{{ sel.name }}</span>
+            <span style="font:500 13px/1.35 'Montserrat',sans-serif;color:{{ sel.heroFg }};text-wrap:pretty">{{ sel.item }}</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+            <span style="font:700 38px/1 'Playfair Display',serif;letter-spacing:-.035em;color:{{ sel.heroFg }}">{{ sel.priceLabel }}</span>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span style="font:500 11px/1 'Montserrat',sans-serif;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.72);color:{{ sel.heroFg }}">{{ sel.payLabel }}</span>
+              <span style="font:500 11px/1 'Montserrat',sans-serif;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.72);color:{{ sel.heroFg }}">{{ sel.status }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Suivi</span>
+          <div style="display:flex;flex-wrap:wrap;gap:7px">
+            <sc-for list="{{ statusOpts }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.select }}" style="cursor:pointer;font:600 12px/1 'Montserrat',sans-serif;padding:10px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+          <button onClick="{{ nextStatus }}" style="cursor:pointer;width:100%;margin-top:2px;padding:14px;background:#F7EDEF;border:0;border-radius:16px;font:600 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B;text-align:left" style-hover="background:#EFE0E4">{{ sel.nextLabel }}</button>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:6px 18px 10px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <sc-for list="{{ sel.rows }}" as="kv" hint-placeholder-count="6">
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #F2E7E9">
+              <span style="flex:none;font:400 13px/1.3 'Montserrat',sans-serif;color:#8B7D7A">{{ kv.k }}</span>
+              <span style="flex:1;min-width:0;font:600 14px/1.35 'Montserrat',sans-serif;text-align:right;color:{{ kv.color }};text-wrap:pretty">{{ kv.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+            <span style="font:600 14px/1 'Montserrat',sans-serif">Paiement</span>
+            <span style="font:600 13px/1 'Montserrat',sans-serif;color:{{ sel.payColor }}">{{ sel.payDetail }}</span>
+          </div>
+          <sc-if value="{{ sel.hasPlan }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px;background:{{ sel.planBg }};border-radius:16px">
+              <div style="display:flex;justify-content:space-between;gap:10px">
+                <span style="font:500 12px/1 'Montserrat',sans-serif;color:{{ sel.planFg }}">Déjà versé</span>
+                <span style="font:600 13px/1 'Montserrat',sans-serif;color:{{ sel.planFg }}">{{ sel.planPaid }}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:10px">
+                <span style="font:500 12px/1 'Montserrat',sans-serif;color:{{ sel.planFg }}">Reste à payer</span>
+                <span style="font:700 15px/1 'Montserrat',sans-serif;color:{{ sel.planFg }}">{{ sel.planLeft }}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:10px">
+                <span style="font:500 12px/1 'Montserrat',sans-serif;color:{{ sel.planFg }}">Prochaine échéance</span>
+                <span style="font:600 13px/1 'Montserrat',sans-serif;color:{{ sel.planFg }}">{{ sel.planDue }}</span>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ sel.unpaid }}" hint-placeholder-val="{{ true }}">
+            <button onClick="{{ markPaid }}" style="cursor:pointer;width:100%;padding:15px;background:#B88AA2;color:#ffffff;border:0;border-radius:16px;font:600 14px/1.2 'Montserrat',sans-serif;box-shadow:0 8px 20px rgba(184,138,162,.26)" style-hover="background:#A77791">Marquer comme payé</button>
+          </sc-if>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <span style="font:600 14px/1 'Montserrat',sans-serif">Note</span>
+          <span style="font:400 14px/1.55 'Montserrat',sans-serif;color:{{ sel.noteFg }};text-wrap:pretty">{{ sel.note }}</span>
+          <button onClick="{{ openClientOfSel }}" style="cursor:pointer;align-self:flex-start;background:transparent;border:0;padding:2px;margin-top:2px;font:600 13px/1 'Montserrat',sans-serif;color:#A77791">Voir la fiche de {{ sel.firstName }} →</button>
+        </div>
+
+        <sc-if value="{{ sel.showPhotos }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <span style="font:600 14px/1 'Montserrat',sans-serif">{{ sel.photoTitle }}</span>
+              <span style="font:400 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ sel.photoCount }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <sc-for list="{{ sel.photos }}" as="p" hint-placeholder-count="2">
+                <div style="aspect-ratio:4/5;border-radius:18px;background:repeating-linear-gradient(45deg,#EFE2E5 0 5px,#FAF5F6 5px 10px);display:flex;align-items:flex-end;padding:10px"><span style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ p.label }}</span></div>
+              </sc-for>
+              <button onClick="{{ addPhoto }}" style="cursor:pointer;aspect-ratio:4/5;border:1px dashed #DFC9D2;border-radius:18px;background:#FAF7F5;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;color:#3A2E2B" style-hover="background:#F7EDEF">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span style="font:600 12px/1 'Montserrat',sans-serif">{{ sel.addPhotoLabel }}</span>
+              </button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ askDelete }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#F7E3E3;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px">
+            <span style="font:500 13px/1.45 'Montserrat',sans-serif;color:#8F4444;text-wrap:pretty">Supprimer cette fiche ? Elle disparaîtra des listes et des statistiques.</span>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ confirmDelete }}" style="flex:1;cursor:pointer;padding:13px;background:#D67B7B;color:#ffffff;border:0;border-radius:14px;font:600 13px/1.2 'Montserrat',sans-serif" style-hover="background:#A85252">Supprimer</button>
+              <button onClick="{{ cancelDelete }}" style="flex:1;cursor:pointer;padding:13px;background:rgba(255,255,255,.75);color:#8F4444;border:0;border-radius:14px;font:600 13px/1.2 'Montserrat',sans-serif" style-hover="background:#ffffff">Annuler</button>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ notAskDelete }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ requestDelete }}" style="cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:transparent;border:1px solid #EBC9C9;border-radius:16px;font:600 13px/1.2 'Montserrat',sans-serif;color:#A85252" style-hover="background:#F7E3E3">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 21 6"></polyline><path d="M8 6V4h8v2"></path><path d="M6 6l1 14h10l1-14"></path></svg>
+            <span>Supprimer la fiche</span>
+          </button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ══ FORMULAIRE (nouvelle fiche / modification) ══ -->
+    <sc-if value="{{ isForm }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 12px;display:flex;align-items:center;gap:10px">
+        <button onClick="{{ cancelForm }}" style="cursor:pointer;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #E8DADA;color:#3A2E2B" style-hover="background:#F7EDEF">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <span style="font:700 20px/1 'Playfair Display',serif;letter-spacing:-.02em">{{ formTitle }}</span>
+      </div>
+
+      <div class="scr" style="flex:1;overflow-y:auto;padding:0 16px 96px;display:flex;flex-direction:column;gap:12px">
+
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Cliente</label>
+            <input type="text" value="{{ form.name }}" onChange="{{ on.name }}" placeholder="Nom et prénom" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+            <sc-if value="{{ hasNameSug }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:4px;padding:4px;background:#FAF7F5;border-radius:14px">
+                <span style="font:500 10px/1 'Montserrat',sans-serif;color:#8B7D7A;padding:6px 8px 2px">Clientes existantes</span>
+                <sc-for list="{{ nameSug }}" as="c" hint-placeholder-count="3">
+                  <button onClick="{{ c.select }}" style="cursor:pointer;text-align:left;background:transparent;border:0;border-radius:11px;padding:9px 8px;display:flex;align-items:center;gap:9px" style-hover="background:#ffffff">
+                    <span style="flex:none;width:28px;height:28px;border-radius:999px;background:{{ c.avBg }};color:{{ c.avFg }};display:flex;align-items:center;justify-content:center;font:600 11px/1 'Montserrat',sans-serif">{{ c.initials }}</span>
+                    <span style="flex:1;min-width:0;font:500 13px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+                    <span style="flex:none;font:400 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ c.phone }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Téléphone</label>
+            <input type="text" value="{{ form.phone }}" onChange="{{ on.phone }}" placeholder="06 …" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+          </div>
+          <sc-if value="{{ showSaveContact }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:10px;padding:13px;background:#FDEFE0;border-radius:16px">
+              <span style="flex:1;min-width:0;font:500 12px/1.4 'Montserrat',sans-serif;color:#A9702F;text-wrap:pretty">{{ saveContactHint }}</span>
+              <button onClick="{{ toggleSaveContact }}" style="flex:none;cursor:pointer;padding:9px 13px;border:0;border-radius:999px;background:{{ saveCtBg }};color:{{ saveCtFg }};font:600 12px/1 'Montserrat',sans-serif" style-hover="opacity:.88">{{ saveCtLabel }}</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Catégorie</span>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ catOpts }}" as="o" hint-placeholder-count="5">
+                <button onClick="{{ o.select }}" style="cursor:pointer;font:500 13px/1 'Montserrat',sans-serif;padding:10px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-for list="{{ pickers }}" as="p" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ p.label }}</label>
+              <sc-if value="{{ p.hasChosen }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ p.chosen }}" as="c" hint-placeholder-count="2">
+                    <button onClick="{{ c.remove }}" style="cursor:pointer;display:flex;align-items:center;gap:7px;padding:9px 11px;border:0;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};font:600 12px/1 'Montserrat',sans-serif" style-hover="opacity:.85">
+                      <span>{{ c.label }}</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <input type="text" value="{{ p.value }}" onChange="{{ p.onChange }}" onFocus="{{ p.focus }}" placeholder="{{ p.ph }}" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+              <sc-if value="{{ p.open }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:4px;padding:4px;background:#FAF7F5;border-radius:14px">
+                  <span style="font:500 10px/1 'Montserrat',sans-serif;color:#8B7D7A;padding:6px 8px 2px">{{ p.listLabel }}</span>
+                  <sc-for list="{{ p.sug }}" as="o" hint-placeholder-count="4">
+                    <button onClick="{{ o.select }}" style="cursor:pointer;text-align:left;background:transparent;border:0;border-radius:11px;padding:10px 9px;display:flex;align-items:center;gap:9px" style-hover="background:#ffffff">
+                      <span style="flex:none;width:8px;height:8px;border-radius:999px;background:{{ o.dot }}"></span>
+                      <span style="flex:1;min-width:0;font:500 13px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.label }}</span>
+                      <span style="flex:none;font:400 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ o.used }}</span>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{ p.empty }}" hint-placeholder-val="{{ false }}">
+                    <span style="font:400 12px/1.4 'Montserrat',sans-serif;color:#8B7D7A;padding:8px">Rien d'enregistré ici pour l'instant.</span>
+                  </sc-if>
+                  <sc-if value="{{ p.canSave }}" hint-placeholder-val="{{ false }}">
+                    <button onClick="{{ p.save }}" style="cursor:pointer;text-align:left;background:#F3E3EA;border:0;border-radius:11px;padding:11px 10px;display:flex;align-items:center;gap:8px;color:#8A5F79" style-hover="background:#DCB6C8">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      <span style="font:600 12px/1.3 'Montserrat',sans-serif">{{ p.saveLabel }}</span>
+                    </button>
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+
+          <sc-for list="{{ optionGroups }}" as="g" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ g.label }}</span>
+              <div style="display:flex;flex-wrap:wrap;gap:7px">
+                <sc-for list="{{ g.opts }}" as="o" hint-placeholder-count="3">
+                  <button onClick="{{ o.select }}" style="cursor:pointer;font:500 13px/1 'Montserrat',sans-serif;padding:10px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+
+          <sc-if value="{{ hasNote }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Note / détails</label>
+              <textarea value="{{ form.note }}" onChange="{{ on.note }}" placeholder="Précisions sur le travail…" rows="3" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.5 'Montserrat',sans-serif;color:#3A2E2B;resize:none"></textarea>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ hasPhotoField }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ photoFieldLabel }}</span>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <sc-for list="{{ formPhotos }}" as="p" hint-placeholder-count="1">
+                  <div style="aspect-ratio:4/5;border-radius:18px;background:repeating-linear-gradient(45deg,#EFE2E5 0 5px,#FAF5F6 5px 10px);display:flex;align-items:flex-end;padding:10px"><span style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ p.label }}</span></div>
+                </sc-for>
+                <button onClick="{{ addFormPhoto }}" style="cursor:pointer;aspect-ratio:4/5;border:1px dashed #DFC9D2;border-radius:18px;background:#FAF7F5;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;color:#3A2E2B" style-hover="background:#F7EDEF">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span style="font:600 12px/1 'Montserrat',sans-serif">{{ addFormPhotoLabel }}</span>
+                </button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;gap:12px">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+              <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Prix (€)</label>
+              <input type="number" value="{{ form.price }}" onChange="{{ on.price }}" placeholder="85" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+              <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Date de dépôt</label>
+              <input type="date" value="{{ form.drop }}" onChange="{{ on.drop }}" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Statut du travail</span>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ formStatusOpts }}" as="o" hint-placeholder-count="4">
+                <button onClick="{{ o.select }}" style="cursor:pointer;font:500 13px/1 'Montserrat',sans-serif;padding:10px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-if value="{{ showDates }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px;background:#FAF7F5;border-radius:16px">
+              <sc-for list="{{ dateFields }}" as="d" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="flex:1;min-width:0;font:500 12px/1.3 'Montserrat',sans-serif;color:#8B7D7A">{{ d.label }}</span>
+                  <input type="date" value="{{ d.value }}" onChange="{{ d.onChange }}" style="flex:none;width:150px;border:1px solid #E8DADA;border-radius:12px;background:#ffffff;padding:10px;font:400 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+                </div>
+              </sc-for>
+              <sc-if value="{{ canClearReturn }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ clearReturn }}" style="cursor:pointer;align-self:flex-start;background:transparent;border:0;padding:2px;font:600 12px/1 'Montserrat',sans-serif;color:#A85252">Annuler le retour et effacer la date</button>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Paiement</span>
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ payOpts }}" as="o" hint-placeholder-count="3">
+                <button onClick="{{ o.select }}" style="cursor:pointer;font:500 13px/1 'Montserrat',sans-serif;padding:10px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-if value="{{ showMethod }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Réglé en</span>
+              <div style="display:flex;flex-wrap:wrap;gap:7px">
+                <sc-for list="{{ methodOpts }}" as="o" hint-placeholder-count="3">
+                  <button onClick="{{ o.select }}" style="cursor:pointer;font:500 13px/1 'Montserrat',sans-serif;padding:10px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showPlan }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px;padding:14px;background:#FAF7F5;border-radius:16px">
+              <span style="font:500 12px/1.4 'Montserrat',sans-serif;color:#8B7D7A">Paiement en plusieurs fois — espèces ou chèque.</span>
+              <div style="display:flex;gap:10px">
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                  <label style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Déjà versé (€)</label>
+                  <input type="number" value="{{ form.planPaid }}" onChange="{{ on.planPaid }}" placeholder="50" style="width:100%;border:1px solid #E8DADA;border-radius:12px;background:#ffffff;padding:10px;font:400 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+                </div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                  <label style="font:500 11px/1 'Montserrat',sans-serif;color:#8B7D7A">Échéance</label>
+                  <input type="date" value="{{ form.planDue }}" onChange="{{ on.planDue }}" style="width:100%;border:1px solid #E8DADA;border-radius:12px;background:#ffffff;padding:10px;font:400 13px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+                </div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px">
+                <sc-for list="{{ planMethodOpts }}" as="o" hint-placeholder-count="2">
+                  <button onClick="{{ o.select }}" style="cursor:pointer;font:500 13px/1 'Montserrat',sans-serif;padding:10px 13px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }}">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <button onClick="{{ save }}" style="cursor:pointer;width:100%;padding:16px;background:{{ saveBg }};color:{{ saveFg }};border:0;border-radius:18px;font:600 15px/1.2 'Montserrat',sans-serif" style-hover="background:{{ saveHover }}">{{ saveLabel }}</button>
+          <span style="font:400 11px/1.4 'Montserrat',sans-serif;color:#8B7D7A;text-align:center">{{ saveHint }}</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ NOUVELLE CLIENTE ══ -->
+    <sc-if value="{{ isAddContact }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 12px;display:flex;align-items:center;gap:10px">
+        <button onClick="{{ goContacts }}" style="cursor:pointer;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #E8DADA;color:#3A2E2B" style-hover="background:#F7EDEF">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <span style="font:700 20px/1 'Playfair Display',serif;letter-spacing:-.02em">Nouvelle cliente</span>
+      </div>
+      <div class="scr" style="flex:1;overflow-y:auto;padding:0 16px 96px;display:flex;flex-direction:column;gap:12px">
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Nom et prénom</label>
+            <input type="text" value="{{ contact.name }}" onChange="{{ onC.name }}" placeholder="Aïcha Diallo" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="font:500 12px/1 'Montserrat',sans-serif;color:#8B7D7A">Téléphone</label>
+            <input type="text" value="{{ contact.phone }}" onChange="{{ onC.phone }}" placeholder="06 …" style="width:100%;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+          </div>
+        </div>
+        <button onClick="{{ saveContact }}" style="cursor:pointer;width:100%;padding:16px;background:{{ saveCBg }};color:{{ saveCFg }};border:0;border-radius:18px;font:600 15px/1.2 'Montserrat',sans-serif" style-hover="background:{{ saveCHover }}">Ajouter la cliente</button>
+        <span style="font:400 11px/1.4 'Montserrat',sans-serif;color:#8B7D7A;text-align:center">{{ saveCHint }}</span>
+      </div>
+    </sc-if>
+
+    <!-- ══ PARAMÈTRES ══ -->
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;padding:6px 16px 12px;display:flex;flex-direction:column;gap:4px">
+        <span style="font:700 22px/1.1 'Playfair Display',serif;letter-spacing:-.02em">Paramètres</span>
+        <span style="font:400 12px/1.4 'Montserrat',sans-serif;color:#8B7D7A">Les listes proposées quand tu remplis une fiche.</span>
+      </div>
+
+      <div class="scr" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:0 16px 96px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <sc-for list="{{ setTabs }}" as="t" hint-placeholder-count="4">
+            <button onClick="{{ t.select }}" style="cursor:pointer;padding:9px 13px;border:1px solid {{ t.bd }};border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};font:500 12px/1 'Montserrat',sans-serif">{{ t.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="background:#ffffff;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 1px 2px rgba(58,46,43,.06)">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+            <span style="font:600 15px/1.2 'Montserrat',sans-serif">{{ catalogTitle }}</span>
+            <span style="font:400 12px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ catalogCount }}</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <input type="text" value="{{ newEntry }}" onChange="{{ onNewEntry }}" placeholder="{{ newEntryPh }}" style="flex:1;min-width:0;border:1px solid #E8DADA;border-radius:14px;background:#FAF7F5;padding:12px;font:400 14px/1.2 'Montserrat',sans-serif;color:#3A2E2B"></input>
+            <button onClick="{{ addEntry }}" style="flex:none;cursor:pointer;padding:0 16px;border:0;border-radius:14px;background:{{ addBg }};color:{{ addFg }};font:600 13px/1 'Montserrat',sans-serif" style-hover="background:{{ addHover }}">Ajouter</button>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ catalogRows }}" as="e" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid #F2E7E9">
+                <span style="flex:none;width:8px;height:8px;border-radius:999px;background:{{ e.dot }}"></span>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <span style="font:500 14px/1.2 'Montserrat',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.label }}</span>
+                  <span style="font:400 11px/1 'Montserrat',sans-serif;color:#8B7D7A">{{ e.used }}</span>
+                </div>
+                <button onClick="{{ e.remove }}" style="flex:none;cursor:pointer;width:30px;height:30px;border-radius:10px;border:0;background:#FAF7F5;color:#A85252;display:flex;align-items:center;justify-content:center" style-hover="background:#F7E3E3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+                </button>
+              </div>
+            </sc-for>
+            <sc-if value="{{ catalogEmpty }}" hint-placeholder-val="{{ false }}">
+              <span style="font:400 13px/1.45 'Montserrat',sans-serif;color:#8B7D7A;padding:14px 0 4px">Rien ici pour l'instant. Ajoute ta première entrée au-dessus.</span>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ TAB BAR ══ -->
+    <div style="position:absolute;left:14px;right:14px;bottom:14px;display:flex;gap:2px;padding:7px 8px;border-radius:30px;background:rgba(255,255,255,.82);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid rgba(255,255,255,.8);box-shadow:0 12px 30px rgba(58,46,43,.16),0 1px 2px rgba(58,46,43,.08),inset 0 1px 0 rgba(255,255,255,.95)">
+      <sc-for list="{{ tabbar }}" as="t" hint-placeholder-count="4">
+        <button onClick="{{ t.select }}" style="flex:1;cursor:pointer;background:transparent;border:0;border-radius:22px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;color:{{ t.fg }}" style-hover="background:rgba(58,46,43,.05)">
+          <span style="display:flex;align-items:center;justify-content:center;width:34px;height:26px;border-radius:999px;background:{{ t.bg }}">
+            <sc-if value="{{ t.isHome }}" hint-placeholder-val="{{ true }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"></path></svg>
+            </sc-if>
+            <sc-if value="{{ t.isStats }}" hint-placeholder-val="{{ false }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="20" x2="6" y2="12"></line><line x1="12" y1="20" x2="12" y2="5"></line><line x1="18" y1="20" x2="18" y2="9"></line></svg>
+            </sc-if>
+            <sc-if value="{{ t.isContacts }}" hint-placeholder-val="{{ false }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.4"></circle><path d="M4 19c0-3.1 2.7-5.2 6-5.2s6 2.1 6 5.2"></path><path d="M17 8.2a3 3 0 0 1 0 5.6"></path></svg>
+            </sc-if>
+            <sc-if value="{{ t.isSettings }}" hint-placeholder-val="{{ false }}">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"></line><line x1="4" y1="16" x2="20" y2="16"></line><circle cx="14" cy="8" r="2.6" fill="currentColor" stroke="none"></circle><circle cx="9" cy="16" r="2.6" fill="currentColor" stroke="none"></circle></svg>
+            </sc-if>
+          </span>
+          <span style="font:600 10px/1 'Montserrat',sans-serif">{{ t.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+  </div>
+
+  <p style="max-width:760px;margin:0;font:400 12px/1.6 'Montserrat',sans-serif;color:#8B7D7A;text-wrap:pretty">Accueil : en cours (plus ancienne en premier), prêt à rendre, non payé, paiement échelonné avec alerte de retard. Le résumé du mois vit maintenant dans les stats.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultPeriod&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Ce mois&quot;,&quot;3 derniers mois&quot;,&quot;Cette année&quot;,&quot;Depuis toujours&quot;],&quot;default&quot;:&quot;Ce mois&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Statistiques&quot;},&quot;defaultStatSet&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Modèles vendus&quot;,&quot;Réparations&quot;,&quot;Couleurs&quot;,&quot;Produits&quot;,&quot;Meilleures clientes&quot;],&quot;default&quot;:&quot;Modèles vendus&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Statistiques&quot;},&quot;currency&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Réglages&quot;}}">
+const MONTHS = ["janv.","févr.","mars","avril","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+const STATUSES = ["En cours", "Prêt", "Rendu", "Retour"];
+const METHODS = ["Espèces", "Carte", "Chèque"];
+const CATS = ["Vente", "Réparation", "Couleur", "Lavage", "Produit"];
+const CAT_C = {
+  "Vente": { color: "#C79BC8", bg: "#F3E6F3", fg: "#7E5480" },
+  "Réparation": { color: "#E1A487", bg: "#FAEAE2", fg: "#9C5F44" },
+  "Couleur": { color: "#C89CB8", bg: "#F5E7EF", fg: "#8A5F79" },
+  "Lavage": { color: "#9CC9E8", bg: "#E7F1F9", fg: "#3F6B87" },
+  "Produit": { color: "#B9A7D9", bg: "#EEE9F7", fg: "#5F5288" }
+};
+const ST = {
+  "En cours": { bg: "#FDEFE0", fg: "#A9702F" },
+  "Prêt": { bg: "#E7F1EB", fg: "#4F7E66" },
+  "Rendu": { bg: "#EFEFEF", fg: "#6B6B6B" },
+  "Retour": { bg: "#F7E3E3", fg: "#A85252" }
+};
+const TODAY = "2026-09-16";
+const TAILLES = ["S", "M", "L", "XL"];
+const TEXTURES = ["Raide", "Ondulé", "Bouclé", "Crépu"];
+const LONGUEURS = ["30-35", "35-40", "40-45", "45-50", "50+"];
+const FINITIONS = ["Raide", "Wavy", "Cranté"];
+const CATALOG = {
+  "Réparation": ["Lace frontale", "Trame arrière", "Densification", "Nœuds blanchis", "Bonnet + élastique", "Ajout de franges"],
+  "Couleur": ["Noir 1B", "Châtain 4", "Miel 27", "Blond 613", "Roux 350", "Gris argenté"],
+  "TypeCouleur": ["Racine", "Balayage", "Ombré", "Couleur complète", "Mèches"],
+  "Produit": ["Shampoing doux", "Colle waterproof", "Spray brillance", "Filet à perruque", "Sérum sans rinçage"]
+};
+const CATALOG_META = {
+  "Réparation": { title: "Types de réparation", entry: "Nouveau type", tab: "Réparations", dot: "#2f6bed" },
+  "Couleur": { title: "Couleurs", entry: "Nouvelle couleur", tab: "Couleurs", dot: "#d0457f" },
+  "TypeCouleur": { title: "Types de coloration", entry: "Racine, balayage…", tab: "Types couleur", dot: "#d0457f" },
+  "Produit": { title: "Produits à vendre", entry: "Nouveau produit", tab: "Produits", dot: "#B9A7D9" }
+};
+
+class Component extends DCLogic {
+  state = {
+    screen: "home", back: "home", selId: null, clientKey: null, editId: null,
+    q: "", cQuery: "", showFilters: false,
+    fPay: "Tous", fStatus: "Tous", fMethod: "Tous", fPeriod: "Tout", fCat: "Tous",
+    fFrom: "2026-08-01", fTo: TODAY,
+    period: null, pFrom: "2026-06-01", pTo: TODAY,
+    statSet: null, txs: null, extra: [],
+    form: null, openPicker: null, contact: { name: "", phone: "" },
+    askDelete: false, catalog: null, setCat: "Réparation", newEntry: "",
+    expand: {}
+  };
+
+  blank() {
+    return {
+      name: "", phone: "", saveContact: true, cat: "Réparation",
+      reps: [], couleur: "", typeCouleur: "", produit: "",
+      taille: "M", texture: "Ondulé", longueur: "40-45", origine: "Stock",
+      lavage: "Lavage seul", finition: "Raide",
+      repQuery: "", couleurQuery: "", typeQuery: "", produitQuery: "",
+      price: "", drop: TODAY, pick: "", retour: "", pick2: "",
+      note: "", photos: [], status: "En cours",
+      pay: "Pas encore", method: "Espèces",
+      planPaid: "", planDue: "", planMethod: "Espèces"
+    };
+  }
+
+  seed() {
+    const t = (o) => Object.assign({ photos: [], plan: null, retour: "", pick2: "", method: "Espèces", origine: "Stock" }, o);
+    return [
+      t({ id: 1, ref: "T-042", name: "Aïcha Diallo", phone: "06 12 44 08 71", cat: "Réparation", item: "Lace frontale + Densification", price: 120, paid: false, status: "En cours", drop: "2026-08-29", pick: "", note: "Lace décollée sur 4 cm, deux rangées à densifier.", photos: ["Avant"] }),
+      t({ id: 2, ref: "T-041", name: "Fatou Bamba", phone: "07 55 21 90 03", cat: "Couleur", item: "Balayage · Miel 27", price: 95, paid: false, status: "En cours", drop: "2026-09-02", pick: "", note: "Éviter les longueurs trop claires.", photos: ["Avant"] }),
+      t({ id: 3, ref: "T-040", name: "Sarah Mensah", phone: "06 78 32 15 44", cat: "Lavage", item: "Lavage + coiffage · Wavy", price: 60, paid: true, method: "Carte", status: "En cours", drop: "2026-09-08", pick: "", note: "Cheveux fins, chaleur basse." }),
+      t({ id: 4, ref: "T-039", name: "Nadia Chérif", phone: "07 01 88 26 19", cat: "Vente", item: "Bouclé 40-45 · Blond 613 · Bonnet M", origine: "Commande", price: 280, paid: false, status: "Prêt", drop: "2026-08-24", pick: "", note: "Prévenir dès que la commande arrive." }),
+      t({ id: 5, ref: "T-038", name: "Kadiatou Sow", phone: "06 44 70 12 58", cat: "Réparation", item: "Bonnet + élastique", price: 35, paid: true, method: "Espèces", status: "Prêt", drop: "2026-09-05", pick: "", note: "Élastique remplacé, bonnet resserré." }),
+      t({ id: 6, ref: "T-037", name: "Leïla Haddad", phone: "07 22 65 47 30", cat: "Couleur", item: "Racine · Noir 1B", price: 70, paid: false, status: "Prêt", drop: "2026-09-09", pick: "", note: "Retouche racines uniquement." }),
+      t({ id: 7, ref: "T-036", name: "Mariam Traoré", phone: "06 90 03 55 12", cat: "Vente", item: "Raide 45-50 · Châtain 4 · Bonnet L", price: 320, paid: false, status: "Rendu", drop: "2026-08-12", pick: "2026-08-20", note: "Doit régler le solde en septembre." }),
+      t({ id: 8, ref: "T-035", name: "Chloé Bernard", phone: "07 66 11 74 82", cat: "Produit", item: "Colle waterproof", price: 22, paid: false, status: "Rendu", drop: "2026-09-01", pick: "2026-09-01", note: "Pas de note." }),
+      t({ id: 9, ref: "T-034", name: "Awa Ndiaye", phone: "06 31 09 62 47", cat: "Vente", item: "Ondulé 40-45 · Miel 27 · Bonnet M", origine: "Commande", price: 300, paid: false, status: "Rendu", drop: "2026-07-18", pick: "2026-07-25", note: "Paiement en trois fois, en espèces.", plan: { paid: 150, due: "2026-09-05", method: "Espèces" } }),
+      t({ id: 10, ref: "T-033", name: "Inès Rossi", phone: "07 40 58 33 26", cat: "Vente", item: "Raide 35-40 · Noir 1B · Bonnet S", price: 260, paid: false, status: "Rendu", drop: "2026-08-02", pick: "2026-08-06", note: "Chèques échelonnés sur deux mois.", plan: { paid: 130, due: "2026-09-30", method: "Chèque" } }),
+      t({ id: 11, ref: "T-032", name: "Rokia Cissé", phone: "06 07 92 41 15", cat: "Lavage", item: "Lavage seul", price: 40, paid: true, method: "Espèces", status: "Rendu", drop: "2026-08-15", pick: "2026-08-16", note: "Pas de note." }),
+      t({ id: 12, ref: "T-031", name: "Yasmine Belkacem", phone: "07 84 26 70 91", cat: "Réparation", item: "Ajout de franges", price: 50, paid: true, method: "Carte", status: "Rendu", drop: "2026-08-11", pick: "2026-08-12", note: "Frange rideau, dégradé léger." }),
+      t({ id: 13, ref: "T-030", name: "Aïcha Diallo", phone: "06 12 44 08 71", cat: "Vente", item: "Ondulé 30-35 · Roux 350 · Bonnet M", price: 205, paid: true, method: "Espèces", status: "Rendu", drop: "2026-07-28", pick: "2026-07-28", note: "Deuxième achat de l'année." }),
+      t({ id: 14, ref: "T-029", name: "Sarah Mensah", phone: "06 78 32 15 44", cat: "Réparation", item: "Lace frontale", price: 80, paid: true, method: "Carte", status: "Rendu", drop: "2026-07-14", pick: "2026-07-16", note: "Même problème que la dernière fois." }),
+      t({ id: 15, ref: "T-028", name: "Fatou Bamba", phone: "07 55 21 90 03", cat: "Produit", item: "Shampoing doux", price: 18, paid: true, method: "Espèces", status: "Rendu", drop: "2026-09-09", pick: "2026-09-09", note: "Prend toujours le format 250 ml." }),
+      t({ id: 16, ref: "T-027", name: "Leïla Haddad", phone: "07 22 65 47 30", cat: "Vente", item: "Bouclé 50+ · Gris argenté · Bonnet L", price: 340, paid: true, method: "Carte", status: "Retour", drop: "2026-08-20", pick: "2026-08-22", retour: "2026-09-10", note: "Trame qui lâche, reprise en atelier." }),
+      t({ id: 17, ref: "T-026", name: "Awa Ndiaye", phone: "06 31 09 62 47", cat: "Lavage", item: "Lavage + coiffage · Cranté", price: 55, paid: true, method: "Espèces", status: "Rendu", drop: "2026-06-30", pick: "2026-07-01", note: "Entretien de routine." }),
+      t({ id: 18, ref: "T-025", name: "Inès Rossi", phone: "07 40 58 33 26", cat: "Couleur", item: "Ombré · Blond 613", price: 110, paid: true, method: "Carte", status: "Rendu", drop: "2026-05-12", pick: "2026-05-14", note: "Fondu très progressif." })
+    ];
+  }
+
+  txs() { return this.state.txs || this.seed(); }
+  cat() { return this.state.catalog || CATALOG; }
+  money(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " " + (this.props.currency || "€"); }
+  dlabel(s) { if (!s) return "—"; const p = s.split("-"); return Number(p[2]) + " " + MONTHS[Number(p[1]) - 1]; }
+  initials(n) { const p = String(n).trim().split(/\s+/); return ((p[0] || "?")[0] + (p[1] ? p[1][0] : "")).toUpperCase(); }
+  first(n) { return String(n).trim().split(/\s+/)[0] || ""; }
+  short(s) { return s.length > 15 ? s.slice(0, 14).trim() + "…" : s; }
+  days(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000); }
+
+  squares(t) {
+    if (t.status === "En cours") return { bg: "#FDEFE0", fg: "#A9702F" };
+    if (t.status === "Prêt") return { bg: "#E7F1EB", fg: "#4F7E66" };
+    if (t.status === "Retour") return { bg: "#F7E3E3", fg: "#A85252" };
+    if (!t.paid) return { bg: "#D67B7B", fg: "#ffffff" };
+    return { bg: "#E4F0EA", fg: "#3F7A5F" };
+  }
+
+  row(t) {
+    const st = ST[t.status], sq = this.squares(t);
+    const plan = t.plan;
+    const left = plan ? t.price - plan.paid : 0;
+    return {
+      id: t.id, ref: t.ref, name: t.name, firstName: this.first(t.name),
+      initials: this.initials(t.name), item: t.item, cat: t.cat, phone: t.phone,
+      status: t.status, note: t.note,
+      priceLabel: this.money(t.price), dropLabel: this.dlabel(t.drop), pickLabel: this.dlabel(t.pick),
+      payLabel: t.paid ? "Payé" : (plan ? "En cours de paiement" : "Impayé"),
+      payBg: t.paid ? "#E4F0EA" : (plan ? "#FAF1DE" : "#F7E3E3"), payFg: t.paid ? "#3F7A5F" : (plan ? "#8A6B24" : "#A85252"),
+      stBg: st.bg, stFg: st.fg, sqBg: sq.bg, sqFg: sq.fg, unpaid: !t.paid,
+      leftLabel: this.money(left),
+      open: () => this.setState({ screen: "detail", back: this.state.screen, selId: t.id, askDelete: false }),
+      openFromClient: () => this.setState({ screen: "detail", back: "client", selId: t.id, askDelete: false })
+    };
+  }
+
+  itemLabel(f) {
+    if (f.cat === "Vente") {
+      const bits = [[f.texture, f.longueur].filter(Boolean).join(" "), f.couleur, f.taille ? "Bonnet " + f.taille : ""];
+      if (f.origine === "Commande") bits.push("Commande");
+      return bits.filter(Boolean).join(" · ") || "Vente";
+    }
+    if (f.cat === "Réparation") return f.reps.length ? f.reps.join(" + ") : "Réparation";
+    if (f.cat === "Couleur") return [f.typeCouleur, f.couleur].filter(Boolean).join(" · ") || "Couleur";
+    if (f.cat === "Lavage") return f.lavage === "Lavage seul" ? "Lavage seul" : "Lavage + coiffage · " + f.finition;
+    return f.produit || "Produit";
+  }
+
+  toForm(t) {
+    const f = this.blank();
+    f.name = t.name; f.phone = t.phone === "—" ? "" : t.phone; f.saveContact = false;
+    f.cat = t.cat; f.price = String(t.price); f.drop = t.drop; f.pick = t.pick || "";
+    f.retour = t.retour || ""; f.pick2 = t.pick2 || ""; f.note = t.note === "Pas de note." ? "" : t.note;
+    f.status = t.status; f.photos = (t.photos || []).slice();
+    f.pay = t.paid ? "Payé" : (t.plan ? "En plusieurs fois" : "Pas encore");
+    f.method = t.method || "Espèces";
+    if (t.plan) { f.planPaid = String(t.plan.paid); f.planDue = t.plan.due; f.planMethod = t.plan.method; }
+    const parts = String(t.item).split(" · ");
+    if (t.cat === "Réparation") f.reps = String(t.item).split(" + ");
+    else if (t.cat === "Couleur") { f.typeCouleur = parts[0] || ""; f.couleur = parts[1] || ""; }
+    else if (t.cat === "Produit") f.produit = t.item;
+    else if (t.cat === "Lavage") {
+      f.lavage = t.item.indexOf("coiffage") >= 0 ? "Lavage + coiffage" : "Lavage seul";
+      f.finition = parts[1] || "Raide";
+    } else if (t.cat === "Vente") {
+      const tl = (parts[0] || "").split(" ");
+      f.texture = tl[0] || "Ondulé"; f.longueur = tl[1] || "40-45";
+      f.couleur = parts[1] || ""; f.taille = (parts[2] || "").replace("Bonnet ", "") || "M";
+      f.origine = t.origine || (String(t.item).indexOf("Commande") >= 0 ? "Commande" : "Stock");
+    }
+    return f;
+  }
+
+  renderVals() {
+    const s = this.state, txs = this.txs(), catalog = this.cat();
+    const sum = a => a.reduce((x, t) => x + t.price, 0);
+    const chip = active => active
+      ? { bg: "#B88AA2", fg: "#ffffff", bd: "#B88AA2" }
+      : { bg: "#FAF7F5", fg: "#6E5F5C", bd: "#E8DADA" };
+    const usedCount = v => txs.filter(x => String(x.item).indexOf(v) >= 0).length;
+
+    // ── accueil : 4 listes
+    const byOld = a => a.slice().sort((x, y) => (x.drop > y.drop ? 1 : -1));
+    const enCours = byOld(txs.filter(t => t.status === "En cours"));
+    const pret = byOld(txs.filter(t => t.status === "Prêt" || t.status === "Retour"));
+    const impaye = byOld(txs.filter(t => t.status === "Rendu" && !t.paid && !t.plan));
+    const echelonne = byOld(txs.filter(t => !!t.plan && !t.paid));
+    const mk = (key, title, dot, arr, emptyLabel, metaFn) => {
+      const open = !!s.expand[key];
+      const shown = open ? arr : arr.slice(0, 5);
+      return {
+        title, dot, empty: arr.length === 0, emptyLabel,
+        countLabel: arr.length ? arr.length + "" : "",
+        hasMore: arr.length > 5,
+        moreLabel: open ? "Réduire" : "Afficher les " + arr.length,
+        toggle: () => this.setState({ expand: Object.assign({}, s.expand, { [key]: !open }) }),
+        rows: shown.map(t => Object.assign(this.row(t), metaFn(t)))
+      };
+    };
+    const ageMeta = t => {
+      const d = this.days(t.drop, TODAY);
+      return { meta: "Déposé le " + this.dlabel(t.drop) + " · " + d + " j", metaFg: d > 14 ? "#A85252" : "#8B7D7A", late: false };
+    };
+    const sections = [
+      mk("enCours", "En cours", "#F0B77E", enCours, "Rien en atelier.", ageMeta),
+      mk("pret", "Prêt à rendre", "#A7C9B4", pret, "Rien à rendre.", t => ({
+        meta: t.status === "Retour" ? "Retour reçu le " + this.dlabel(t.retour) : "Prêt · déposé le " + this.dlabel(t.drop),
+        metaFg: t.status === "Retour" ? "#A85252" : "#4F7E66", late: false
+      })),
+      mk("impaye", "Non payé", "#D67B7B", impaye, "Tout est réglé.", t => ({
+        meta: "Rendu le " + this.dlabel(t.pick), metaFg: "#A85252", late: false
+      })),
+      mk("echeance", "En cours de paiement", "#D6B76E", echelonne, "Aucun paiement échelonné.", t => {
+        const late = t.plan.due < TODAY;
+        return {
+          meta: "Reste " + this.money(t.price - t.plan.paid) + " · " + t.plan.method.toLowerCase() + " · " + this.dlabel(t.plan.due),
+          metaFg: late ? "#A85252" : "#8A6B24", late
+        };
+      })
+    ];
+
+    // ── liste complète
+    const sorted = txs.slice().sort((a, b) => (a.drop < b.drop ? 1 : -1));
+    const q = s.q.trim().toLowerCase();
+    const inPeriod = t => {
+      if (s.fPeriod === "Cette semaine") return this.days(t.drop, TODAY) <= 7;
+      if (s.fPeriod === "Ce mois") return t.drop.slice(0, 7) === TODAY.slice(0, 7);
+      if (s.fPeriod === "3 derniers mois") return this.days(t.drop, TODAY) <= 92;
+      if (s.fPeriod === "Période…") return (!s.fFrom || t.drop >= s.fFrom) && (!s.fTo || t.drop <= s.fTo);
+      return true;
+    };
+    const filtered = sorted.filter(t =>
+      (!q || (t.name + " " + t.item + " " + t.note).toLowerCase().includes(q)) &&
+      (s.fPay === "Tous" || (s.fPay === "Payé") === !!t.paid) &&
+      (s.fStatus === "Tous" || s.fStatus === t.status) &&
+      (s.fCat === "Tous" || s.fCat === t.cat) && inPeriod(t)
+    );
+    const group = (label, key, opts) => ({
+      label, opts: opts.map(o => {
+        const c = chip(s[key] === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => this.setState({ [key]: o }) };
+      })
+    });
+
+    // ── stats
+    const period = s.period || this.props.defaultPeriod || "Ce mois";
+    const statSet = s.statSet || this.props.defaultStatSet || "Modèles vendus";
+    const inStat = t => {
+      if (period === "Ce mois") return t.drop.slice(0, 7) === TODAY.slice(0, 7);
+      if (period === "3 derniers mois") return this.days(t.drop, TODAY) <= 92;
+      if (period === "Cette année") return t.drop >= "2026-01-01";
+      if (period === "Période…") return (!s.pFrom || t.drop >= s.pFrom) && (!s.pTo || t.drop <= s.pTo);
+      return true;
+    };
+    const scope = txs.filter(inStat);
+    const scopeTotal = sum(scope);
+    const scopePaid = sum(scope.filter(t => t.paid));
+    const scopePlan = scope.filter(t => t.plan && !t.paid).reduce((a, t) => a + t.plan.paid, 0);
+    const slices = CATS.map(cat => {
+      const rows = scope.filter(t => t.cat === cat);
+      const amt = sum(rows);
+      const pct = scopeTotal ? (amt / scopeTotal) * 100 : 0;
+      return { label: cat, color: CAT_C[cat].color, amount: this.money(amt), pct, pctLabel: Math.round(pct) + " %" };
+    });
+    let acc = 0;
+    const stops = slices.filter(x => x.pct > 0).map(x => {
+      const a = acc, b = acc + x.pct * 3.6; acc = b;
+      return x.color + " " + a.toFixed(1) + "deg " + b.toFixed(1) + "deg";
+    });
+    const donut = stops.length ? "conic-gradient(" + stops.join(",") + ")" : "conic-gradient(#EFE2E5 0deg 360deg)";
+    const rankBy = (rows, color, keyFn) => {
+      const m = {};
+      rows.forEach(t => { const k = keyFn(t); if (!k) return; (m[k] = m[k] || []).push(t); });
+      const items = Object.keys(m).map(k => ({ k, rows: m[k] })).sort((a, b) => b.rows.length - a.rows.length).slice(0, 5);
+      const max = items.length ? items[0].rows.length : 1;
+      return items.map(it => ({
+        label: it.k, color, short: this.short(it.k), value: it.rows.length + "×",
+        h: Math.max(8, (it.rows.length / max) * 82) + "%", sub2: this.money(sum(it.rows))
+      }));
+    };
+    let ranking = [], rankHint = "";
+    if (statSet === "Modèles vendus") {
+      ranking = rankBy(scope.filter(t => t.cat === "Vente"), CAT_C["Vente"].color, t => String(t.item).split(" · ")[0]);
+      rankHint = "Perruques les plus vendues (texture + longueur).";
+    } else if (statSet === "Réparations") {
+      ranking = rankBy(scope.filter(t => t.cat === "Réparation"), CAT_C["Réparation"].color, t => String(t.item).split(" + ")[0]);
+      rankHint = "Réparations les plus fréquentes sur la période.";
+    } else if (statSet === "Couleurs") {
+      ranking = rankBy(scope.filter(t => t.cat === "Couleur"), CAT_C["Couleur"].color, t => String(t.item).split(" · ")[1] || t.item);
+      rankHint = "Couleurs les plus demandées sur la période.";
+    } else if (statSet === "Produits") {
+      ranking = rankBy(scope.filter(t => t.cat === "Produit"), CAT_C["Produit"].color, t => t.item);
+      rankHint = "Produits les plus vendus sur la période.";
+    } else {
+      const m = {};
+      scope.forEach(t => { (m[t.name] = m[t.name] || []).push(t); });
+      const items = Object.keys(m).map(k => ({ k, rows: m[k] })).sort((a, b) => sum(b.rows) - sum(a.rows)).slice(0, 5);
+      const max = items.length ? sum(items[0].rows) : 1;
+      ranking = items.map(it => ({
+        label: it.k, color: "#C89CB8", short: this.short(it.k), value: this.money(sum(it.rows)),
+        h: Math.max(8, (sum(it.rows) / max) * 82) + "%",
+        sub2: it.rows.length + (it.rows.length > 1 ? " fiches" : " fiche")
+      }));
+      rankHint = "Clientes qui ont le plus dépensé sur la période.";
+    }
+
+    // ── contacts
+    const cmap = {};
+    txs.forEach(t => {
+      const k = t.name.toLowerCase();
+      cmap[k] = cmap[k] || { key: k, name: t.name, phone: t.phone, rows: [] };
+      cmap[k].rows.push(t);
+    });
+    s.extra.forEach(c => {
+      const k = c.name.toLowerCase();
+      if (!cmap[k]) cmap[k] = { key: k, name: c.name, phone: c.phone || "—", rows: [] };
+    });
+    const clientList = Object.keys(cmap).map(k => cmap[k]).sort((a, b) => a.name.localeCompare(b.name));
+    const avFor = c => CAT_C[CATS[c.name.length % 5]];
+    const cq = s.cQuery.trim().toLowerCase();
+    const clients = clientList.filter(c => !cq || c.name.toLowerCase().includes(cq)).map(c => {
+      const av = avFor(c);
+      return {
+        name: c.name, initials: this.initials(c.name), avBg: av.bg, avFg: av.fg,
+        sub: c.rows.length ? c.rows.length + (c.rows.length > 1 ? " transactions" : " transaction") : "Pas encore de transaction",
+        total: this.money(sum(c.rows)),
+        open: () => this.setState({ screen: "client", clientKey: c.key })
+      };
+    });
+    const cur = cmap[s.clientKey] || clientList[0] || { name: "—", phone: "—", rows: [] };
+    const curRows = cur.rows.slice().sort((a, b) => (a.drop < b.drop ? 1 : -1));
+    const curAv = avFor(cur);
+    const cli = {
+      name: cur.name, initials: this.initials(cur.name), phone: cur.phone,
+      avBg: curAv.bg, avFg: curAv.fg,
+      total: this.money(sum(curRows)), count: curRows.length,
+      last: curRows.length ? this.dlabel(curRows[0].drop) : "—",
+      unpaidLabel: curRows.filter(t => !t.paid).length
+        ? this.money(sum(curRows.filter(t => !t.paid))) + " en attente" : "Tout est payé",
+      rows: curRows.map(t => this.row(t)), empty: curRows.length === 0
+    };
+
+    // ── détail
+    const t = txs.find(x => x.id === s.selId) || txs[0] || this.seed()[0];
+    const r = this.row(t);
+    const kv = (k, v, color) => ({ k, v, color: color || "#3A2E2B" });
+    const rows = [kv("Détail", t.item)];
+    if (t.cat === "Vente" && t.origine) rows.push(kv("Provenance", t.origine, t.origine === "Commande" ? "#A9702F" : "#3A2E2B"));
+    rows.push(kv("Déposé le", this.dlabel(t.drop)));
+    if (t.pick) rows.push(kv("Rendu le", this.dlabel(t.pick)));
+    if (t.retour) rows.push(kv("Retour le", this.dlabel(t.retour), "#A85252"));
+    if (t.retour) rows.push(kv("Récupéré (2e fois)", t.pick2 ? this.dlabel(t.pick2) : "en attente", t.pick2 ? "#3A2E2B" : "#A85252"));
+    rows.push(kv("Référence", t.ref));
+    const order = ["En cours", "Prêt", "Rendu", "Retour"];
+    const nextS = order[(order.indexOf(t.status) + 1) % 4];
+    const showPhotos = t.cat === "Couleur" || t.cat === "Réparation" || t.cat === "Vente";
+    const sel = Object.assign(r, {
+      rows,
+      heroBg: t.status === "En cours" ? "#FDEFE0" : (t.status === "Prêt" ? "#E7F1EB" : (t.paid ? "#E4F0EA" : "#F7E3E3")),
+      heroFg: t.status === "En cours" ? "#8A5A22" : (t.status === "Prêt" ? "#3F7A5F" : (t.paid ? "#3F7A5F" : "#8F4444")),
+      heroMuted: t.status === "En cours" ? "#A9702F" : (t.status === "Prêt" ? "#5E8F74" : (t.paid ? "#6FAF8F" : "#B58080")),
+      nextLabel: "Passer en « " + nextS.toLowerCase() + " »",
+      payColor: t.paid ? "#3F7A5F" : "#A85252",
+      payDetail: t.paid ? "Payé · " + (t.method || "Espèces") : (t.plan ? "Échelonné · " + t.plan.method.toLowerCase() : "Pas encore payé"),
+      hasPlan: !!t.plan && !t.paid,
+      planPaid: t.plan ? this.money(t.plan.paid) : "",
+      planLeft: t.plan ? this.money(t.price - t.plan.paid) : "",
+      planDue: t.plan ? this.dlabel(t.plan.due) + (t.plan.due < TODAY ? " · en retard" : "") : "",
+      planBg: t.plan && t.plan.due < TODAY ? "#F7E3E3" : "#F7EDEF",
+      planFg: t.plan && t.plan.due < TODAY ? "#8F4444" : "#3A2E2B",
+      note: t.note && t.note !== "Pas de note." ? t.note : "Aucune note pour cette fiche.",
+      noteFg: t.note && t.note !== "Pas de note." ? "#3A2E2B" : "#8B7D7A",
+      showPhotos,
+      photoTitle: t.cat === "Vente" ? "Photos après" : "Photo avant",
+      photos: (t.photos || []).map((p, i) => ({ label: p + " " + (i + 1) })),
+      photoCount: (t.photos || []).length ? (t.photos || []).length + " photo(s)" : "aucune",
+      addPhotoLabel: t.cat === "Vente" ? "Après" : "Avant"
+    });
+
+    const setStatus = (st) => {
+      this.setState({
+        txs: this.txs().map(x => {
+          if (x.id !== t.id) return x;
+          const n = Object.assign({}, x, { status: st });
+          if (st === "Rendu") { if (!n.pick) n.pick = TODAY; else if (x.retour && !n.pick2) n.pick2 = TODAY; }
+          if (st === "Retour") { n.retour = TODAY; n.pick2 = ""; }
+          return n;
+        })
+      });
+    };
+
+    // ── formulaire
+    const f = s.form || this.blank();
+    const patch = p => this.setState({ form: Object.assign({}, this.state.form || this.blank(), p) });
+    const on = {
+      name: e => patch({ name: e.target.value }), phone: e => patch({ phone: e.target.value }),
+      price: e => patch({ price: e.target.value }), drop: e => patch({ drop: e.target.value }),
+      note: e => patch({ note: e.target.value }),
+      planPaid: e => patch({ planPaid: e.target.value }), planDue: e => patch({ planDue: e.target.value })
+    };
+    const nameTyped = f.name.trim().toLowerCase();
+    const known = clientList.some(c => c.name.toLowerCase() === nameTyped);
+    const nameSug = (nameTyped.length >= 1 && !known ? clientList.filter(c => c.name.toLowerCase().includes(nameTyped)) : [])
+      .slice(0, 4).map(c => {
+        const av = avFor(c);
+        return {
+          name: c.name, initials: this.initials(c.name), phone: c.phone, avBg: av.bg, avFg: av.fg,
+          select: () => patch({ name: c.name, phone: c.phone === "—" ? "" : c.phone, saveContact: false })
+        };
+      });
+
+    const mkPicker = (key, label, catalogKey, valueKey, queryKey, multi, ph) => {
+      const list = catalog[catalogKey] || [];
+      const typedV = (f[queryKey] || "").trim();
+      const low = typedV.toLowerCase();
+      const open = s.openPicker === key;
+      const chosen = multi ? f[valueKey] : (f[valueKey] ? [f[valueKey]] : []);
+      const sug = list.filter(v => !low || v.toLowerCase().includes(low)).filter(v => chosen.indexOf(v) < 0).slice(0, 6);
+      const pick = v => {
+        if (multi) patch({ [valueKey]: f[valueKey].concat([v]), [queryKey]: "" });
+        else patch({ [valueKey]: v, [queryKey]: v });
+        this.setState({ openPicker: null });
+      };
+      return {
+        label, ph, listLabel: multi ? "Choisis une ou plusieurs entrées" : "Liste enregistrée",
+        value: f[queryKey] || "", open,
+        onChange: e => { patch({ [queryKey]: e.target.value }); this.setState({ openPicker: key }); },
+        focus: () => this.setState({ openPicker: key }),
+        hasChosen: chosen.length > 0,
+        chosen: chosen.map(v => ({
+          label: v, bg: CAT_C[f.cat].bg, fg: CAT_C[f.cat].fg,
+          remove: () => multi ? patch({ [valueKey]: f[valueKey].filter(x => x !== v) }) : patch({ [valueKey]: "", [queryKey]: "" })
+        })),
+        sug: sug.map(v => ({ label: v, dot: CATALOG_META[catalogKey].dot, used: usedCount(v) ? usedCount(v) + "×" : "", select: () => pick(v) })),
+        empty: sug.length === 0,
+        canSave: typedV.length > 1 && !list.some(v => v.toLowerCase() === low),
+        saveLabel: "Enregistrer « " + typedV + " » dans la liste",
+        save: () => {
+          this.setState({ catalog: Object.assign({}, catalog, { [catalogKey]: list.concat([typedV]) }) });
+          pick(typedV);
+        }
+      };
+    };
+
+    const optGroup = (label, key, opts) => ({
+      label, opts: opts.map(o => {
+        const c = chip(f[key] === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => patch({ [key]: o }) };
+      })
+    });
+
+    let pickers = [], optionGroups = [], hasNote = true, photoField = "";
+    if (f.cat === "Réparation") {
+      pickers = [mkPicker("rep", "Réparations (plusieurs possibles)", "Réparation", "reps", "repQuery", true, "Lace frontale…")];
+      photoField = "Photo avant";
+    } else if (f.cat === "Couleur") {
+      pickers = [
+        mkPicker("typec", "Type de coloration", "TypeCouleur", "typeCouleur", "typeQuery", false, "Racine, balayage…"),
+        mkPicker("coul", "Couleur", "Couleur", "couleur", "couleurQuery", false, "Blond 613…")
+      ];
+      photoField = "Photo avant";
+    } else if (f.cat === "Produit") {
+      pickers = [mkPicker("prod", "Produit", "Produit", "produit", "produitQuery", false, "Shampoing doux…")];
+      hasNote = false;
+    } else if (f.cat === "Lavage") {
+      optionGroups = [optGroup("Prestation", "lavage", ["Lavage seul", "Lavage + coiffage"])];
+      if (f.lavage === "Lavage + coiffage") optionGroups.push(optGroup("Coiffage", "finition", FINITIONS));
+      hasNote = false;
+    } else {
+      pickers = [mkPicker("coul", "Couleur", "Couleur", "couleur", "couleurQuery", false, "Blond 613…")];
+      optionGroups = [
+        optGroup("Provenance", "origine", ["Stock", "Commande"]),
+        optGroup("Taille du bonnet", "taille", TAILLES),
+        optGroup("Texture", "texture", TEXTURES),
+        optGroup("Longueur (cm)", "longueur", LONGUEURS)
+      ];
+      photoField = "Photos après";
+    }
+
+    const ready = f.name.trim() && f.price && (
+      f.cat === "Réparation" ? f.reps.length > 0 :
+      f.cat === "Couleur" ? (f.couleur || f.typeCouleur) :
+      f.cat === "Produit" ? f.produit : true);
+
+    const dateFields = [];
+    if (f.status === "Rendu" || f.status === "Retour") dateFields.push({ label: "Rendu le", value: f.pick, onChange: e => patch({ pick: e.target.value }) });
+    if (f.status === "Retour") {
+      dateFields.push({ label: "Retour reçu le", value: f.retour, onChange: e => patch({ retour: e.target.value }) });
+      dateFields.push({ label: "Récupéré après retour", value: f.pick2, onChange: e => patch({ pick2: e.target.value }) });
+    }
+
+    const c2 = s.contact;
+    const setC = k => e => this.setState({ contact: Object.assign({}, this.state.contact, { [k]: e.target.value }) });
+    const readyC = c2.name.trim().length > 1;
+
+    // ── paramètres
+    const setKey = CATALOG_META[s.setCat] ? s.setCat : "Réparation";
+    const setMeta = CATALOG_META[setKey];
+    const entries = catalog[setKey] || [];
+    const newEntry = s.newEntry.trim();
+    const canAdd = newEntry.length > 0 && !entries.some(v => v.toLowerCase() === newEntry.toLowerCase());
+
+    const tabDef = (id, label, screens) => {
+      const active = screens.indexOf(s.screen) >= 0;
+      return {
+        label, isHome: id === "home", isStats: id === "stats", isContacts: id === "contacts", isSettings: id === "settings",
+        fg: active ? "#8A5F79" : "#8B7D7A", bg: active ? "#F3E3EA" : "transparent",
+        select: () => this.setState({ screen: id })
+      };
+    };
+
+    return {
+      isHome: s.screen === "home", isList: s.screen === "list", isDetail: s.screen === "detail",
+      isForm: s.screen === "form", isStats: s.screen === "stats", isContacts: s.screen === "contacts",
+      isClient: s.screen === "client", isAddContact: s.screen === "addContact", isSettings: s.screen === "settings",
+      tabbar: [
+        tabDef("home", "Accueil", ["home", "list", "detail", "form"]),
+        tabDef("stats", "Stats", ["stats"]),
+        tabDef("contacts", "Contacts", ["contacts", "client", "addContact"]),
+        tabDef("settings", "Paramètres", ["settings"])
+      ],
+
+      sections, totalCount: txs.length,
+
+      filtered: filtered.map(x => this.row(x)), noResults: filtered.length === 0,
+      resultLabel: filtered.length + (filtered.length > 1 ? " résultats" : " résultat"),
+      resultSum: this.money(sum(filtered)),
+      query: s.q, onQuery: e => this.setState({ q: e.target.value }),
+      showFilters: s.showFilters, toggleFilters: () => this.setState({ showFilters: !s.showFilters }),
+      filtLabel: s.showFilters ? "Fermer" : "Filtrer",
+      filtBg: s.showFilters ? "#B88AA2" : "#ffffff",
+      filtFg: s.showFilters ? "#ffffff" : "#3A2E2B",
+      filtBd: s.showFilters ? "#B88AA2" : "#E8DADA",
+      filterGroups: [
+        group("Paiement", "fPay", ["Tous", "Payé", "Impayé"]),
+        group("Statut du travail", "fStatus", ["Tous"].concat(STATUSES)),
+        group("Catégorie", "fCat", ["Tous"].concat(CATS)),
+        group("Période", "fPeriod", ["Tout", "Cette semaine", "Ce mois", "3 derniers mois", "Période…"])
+      ],
+      customPeriod: s.fPeriod === "Période…",
+      fFrom: s.fFrom, fTo: s.fTo,
+      onFrom: e => this.setState({ fFrom: e.target.value }),
+      onTo: e => this.setState({ fTo: e.target.value }),
+      resetFilters: () => this.setState({ fPay: "Tous", fStatus: "Tous", fCat: "Tous", fPeriod: "Tout", q: "" }),
+
+      periodOpts: ["Ce mois", "3 derniers mois", "Cette année", "Depuis toujours", "Période…"].map(o => {
+        const c = chip(period === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => this.setState({ period: o }) };
+      }),
+      statCustom: period === "Période…",
+      pFrom: s.pFrom, pTo: s.pTo,
+      onPFrom: e => this.setState({ pFrom: e.target.value }),
+      onPTo: e => this.setState({ pTo: e.target.value }),
+      periodLabel: period === "Période…" ? this.dlabel(s.pFrom) + " → " + this.dlabel(s.pTo) : period,
+      periodPaid: this.money(scopePaid + scopePlan),
+      periodUnpaid: this.money(scopeTotal - scopePaid - scopePlan),
+      periodCount: scope.length,
+      periodAvg: scope.length ? this.money(scopeTotal / scope.length) : this.money(0),
+      periodTotal: this.money(scopeTotal),
+      setOpts: ["Modèles vendus", "Réparations", "Couleurs", "Produits", "Meilleures clientes"].map(o => {
+        const c = chip(statSet === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => this.setState({ statSet: o }) };
+      }),
+      donut, slices, ranking, rankEmpty: ranking.length === 0, rankHint,
+
+      clients, noClients: clients.length === 0, clientCount: clientList.length,
+      cQuery: s.cQuery, onCQuery: e => this.setState({ cQuery: e.target.value }),
+      cli,
+      addForClient: () => {
+        const nf = this.blank();
+        nf.name = cur.name; nf.phone = cur.phone === "—" ? "" : cur.phone; nf.saveContact = false;
+        this.setState({ screen: "form", back: "client", editId: null, form: nf, openPicker: null });
+      },
+
+      sel,
+      statusOpts: STATUSES.map(o => {
+        const active = t.status === o;
+        return {
+          label: o,
+          bg: active ? ST[o].fg : "#FAF7F5", fg: active ? "#ffffff" : "#6E5F5C",
+          bd: active ? ST[o].fg : "#E8DADA",
+          select: () => setStatus(o)
+        };
+      }),
+      nextStatus: () => setStatus(nextS),
+      markPaid: () => this.setState({ txs: this.txs().map(x => x.id === t.id ? Object.assign({}, x, { paid: true, plan: null }) : x) }),
+      addPhoto: () => this.setState({
+        txs: this.txs().map(x => x.id === t.id ? Object.assign({}, x, { photos: (x.photos || []).concat([t.cat === "Vente" ? "Après" : "Avant"]) }) : x)
+      }),
+      openClientOfSel: () => this.setState({ screen: "client", clientKey: t.name.toLowerCase() }),
+      askDelete: s.askDelete, notAskDelete: !s.askDelete,
+      requestDelete: () => this.setState({ askDelete: true }),
+      cancelDelete: () => this.setState({ askDelete: false }),
+      confirmDelete: () => this.setState({
+        txs: this.txs().filter(x => x.id !== t.id),
+        screen: s.back === "client" ? "client" : (s.back || "home"), askDelete: false, selId: null
+      }),
+      goEdit: () => this.setState({ screen: "form", back: "detail", editId: t.id, form: this.toForm(t), openPicker: null }),
+
+      goHome: () => this.setState({ screen: "home" }), goList: () => this.setState({ screen: "list" }),
+      goContacts: () => this.setState({ screen: "contacts" }),
+      goBack: () => this.setState({ screen: s.back || "home" }),
+      goAdd: () => this.setState({ screen: "form", back: "home", editId: null, form: this.blank(), openPicker: null }),
+      goAddContact: () => this.setState({ screen: "addContact" }),
+      cancelForm: () => this.setState({ screen: s.back || "home", openPicker: null }),
+
+      formTitle: s.editId ? "Modifier la fiche" : "Nouvelle fiche",
+      saveLabel: s.editId ? "Enregistrer les modifications" : "Enregistrer la fiche",
+      form: f, on,
+      catOpts: CATS.map(o => {
+        const c = chip(f.cat === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => { patch({ cat: o }); this.setState({ openPicker: null }); } };
+      }),
+      pickers, optionGroups, hasNote,
+      hasPhotoField: photoField !== "", photoFieldLabel: photoField,
+      formPhotos: f.photos.map((p, i) => ({ label: p + " " + (i + 1) })),
+      addFormPhotoLabel: f.cat === "Vente" ? "Après" : "Avant",
+      addFormPhoto: () => patch({ photos: f.photos.concat([f.cat === "Vente" ? "Après" : "Avant"]) }),
+      nameSug, hasNameSug: nameSug.length > 0,
+      showSaveContact: !s.editId && f.name.trim().length > 1 && !known,
+      saveContactHint: f.saveContact ? "« " + f.name.trim() + " » sera ajoutée aux contacts." : "« " + f.name.trim() + " » ne sera pas enregistrée dans les contacts.",
+      saveCtLabel: f.saveContact ? "Oui" : "Non",
+      saveCtBg: f.saveContact ? "#B88AA2" : "#ffffff",
+      saveCtFg: f.saveContact ? "#ffffff" : "#A9702F",
+      toggleSaveContact: () => patch({ saveContact: !f.saveContact }),
+
+      formStatusOpts: STATUSES.map(o => {
+        const c = chip(f.status === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => patch({ status: o }) };
+      }),
+      showDates: dateFields.length > 0, dateFields,
+      canClearReturn: !!f.retour,
+      clearReturn: () => patch({ retour: "", pick2: "", status: "Rendu" }),
+
+      payOpts: ["Pas encore", "Payé", "En plusieurs fois"].map(o => {
+        const c = chip(f.pay === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => patch({ pay: o }) };
+      }),
+      showMethod: f.pay === "Payé",
+      methodOpts: METHODS.map(o => {
+        const c = chip(f.method === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => patch({ method: o }) };
+      }),
+      showPlan: f.pay === "En plusieurs fois",
+      planMethodOpts: ["Espèces", "Chèque"].map(o => {
+        const c = chip(f.planMethod === o);
+        return { label: o, bg: c.bg, fg: c.fg, bd: c.bd, select: () => patch({ planMethod: o }) };
+      }),
+
+      saveBg: ready ? "#B88AA2" : "#EBDDE3", saveFg: ready ? "#ffffff" : "#8B7D7A",
+      saveHover: ready ? "#A77791" : "#EBDDE3",
+      saveHint: ready ? "Tu pourras tout modifier depuis la fiche." : "Nom de la cliente, prestation et prix sont nécessaires.",
+      save: () => {
+        if (!ready) return;
+        const base = {
+          name: f.name.trim(), phone: f.phone || "—", cat: f.cat, item: this.itemLabel(f),
+          price: Number(f.price), paid: f.pay === "Payé", method: f.method, status: f.status,
+          origine: f.cat === "Vente" ? f.origine : "",
+          drop: f.drop, pick: f.pick, retour: f.retour, pick2: f.pick2,
+          note: f.note.trim() || "Pas de note.", photos: f.photos,
+          plan: f.pay === "En plusieurs fois" ? { paid: Number(f.planPaid || 0), due: f.planDue || TODAY, method: f.planMethod } : null
+        };
+        if (s.editId) {
+          this.setState({
+            txs: this.txs().map(x => x.id === s.editId ? Object.assign({}, x, base) : x),
+            screen: "detail", selId: s.editId, editId: null, back: "home", openPicker: null
+          });
+          return;
+        }
+        const id = Math.max.apply(null, this.txs().map(x => x.id).concat([0])) + 1;
+        const nt = Object.assign({ id, ref: "T-0" + (43 + id - 19) }, base);
+        const extra = (f.saveContact && !known) ? this.state.extra.concat([{ name: f.name.trim(), phone: f.phone }]) : this.state.extra;
+        this.setState({ txs: [nt].concat(this.txs()), extra, screen: "detail", back: "home", selId: id, form: this.blank(), openPicker: null, askDelete: false });
+      },
+
+      contact: c2, onC: { name: setC("name"), phone: setC("phone") },
+      saveCBg: readyC ? "#B88AA2" : "#EBDDE3", saveCFg: readyC ? "#ffffff" : "#8B7D7A",
+      saveCHover: readyC ? "#A77791" : "#EBDDE3",
+      saveCHint: readyC ? "Elle apparaîtra dans les contacts." : "Indique au moins son nom.",
+      saveContact: () => {
+        if (!readyC) return;
+        this.setState({
+          extra: this.state.extra.concat([{ name: c2.name.trim(), phone: c2.phone }]),
+          screen: "client", clientKey: c2.name.trim().toLowerCase(), contact: { name: "", phone: "" }
+        });
+      },
+
+      setTabs: Object.keys(CATALOG_META).map(k => {
+        const active = setKey === k, c = chip(active);
+        return { label: CATALOG_META[k].tab, bg: c.bg, fg: c.fg, bd: c.bd, select: () => this.setState({ setCat: k, newEntry: "" }) };
+      }),
+      catalogTitle: setMeta.title,
+      catalogCount: entries.length + (entries.length > 1 ? " entrées" : " entrée"),
+      catalogRows: entries.map(v => ({
+        label: v, dot: setMeta.dot,
+        used: usedCount(v) ? "utilisé " + usedCount(v) + "×" : "jamais utilisé",
+        remove: () => this.setState({ catalog: Object.assign({}, catalog, { [setKey]: entries.filter(x => x !== v) }) })
+      })),
+      catalogEmpty: entries.length === 0,
+      newEntry: s.newEntry, newEntryPh: setMeta.entry,
+      onNewEntry: e => this.setState({ newEntry: e.target.value }),
+      addBg: canAdd ? "#B88AA2" : "#EBDDE3", addFg: canAdd ? "#ffffff" : "#8B7D7A",
+      addHover: canAdd ? "#A77791" : "#EBDDE3",
+      addEntry: () => { if (canAdd) this.setState({ catalog: Object.assign({}, catalog, { [setKey]: entries.concat([newEntry]) }), newEntry: "" }); }
+    };
+  }
+}
+</script>
+</body>
+</html>
