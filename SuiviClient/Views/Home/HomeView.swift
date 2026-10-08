@@ -75,6 +75,7 @@ struct HomeView: View {
             .padding(.top, 8)
             .screenBottomPadding()
         }
+        .refreshable { await store.sync() }
         .background(Theme.Colors.background)
         .toolbar(.hidden, for: .navigationBar)
     }

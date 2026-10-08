@@ -65,6 +65,19 @@ struct AppTransaction: Identifiable, Codable, Hashable {
         return .impaye
     }
 
+    /// Numéro de fiche tiré de `ref` ("T-012" → 12).
+    var ficheNumber: Int? { Int(ref.drop { !$0.isNumber }) }
+
+    /// "Fiche nº 12" — affichage de `ref`, qui reste stocké sous la forme "T-012".
+    var ficheLabel: String { ficheNumber.map { "Fiche nº \($0)" } ?? "Fiche \(ref)" }
+
+    /// Ordre d'arrivée, le plus récent en premier : date de dépôt, puis numéro de fiche
+    /// pour départager les fiches déposées le même jour.
+    static func byArrivalNewestFirst(_ a: AppTransaction, _ b: AppTransaction) -> Bool {
+        if a.dropDate != b.dropDate { return a.dropDate > b.dropDate }
+        return (a.ficheNumber ?? 0) > (b.ficheNumber ?? 0)
+    }
+
     /// Jours entre dépôt et aujourd'hui.
     var ageDays: Int {
         Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: dropDate), to: Calendar.current.startOfDay(for: .now)).day ?? 0

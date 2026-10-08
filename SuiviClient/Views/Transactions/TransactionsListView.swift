@@ -15,7 +15,7 @@ struct TransactionsListView: View {
     @State private var customFrom = Calendar.current.date(byAdding: .month, value: -1, to: .now) ?? .now
     @State private var customTo = Date.now
 
-    private var all: [TransactionEntry] { store.allEntries.sorted { $0.dropDate > $1.dropDate } }
+    private var all: [TransactionEntry] { store.allEntries.sorted { AppTransaction.byArrivalNewestFirst($0.transaction, $1.transaction) } }
 
     private var filtered: [TransactionEntry] {
         all.filter { t in
@@ -123,6 +123,7 @@ struct TransactionsListView: View {
                 .padding(.horizontal, Theme.Spacing.contentMargin)
                 .screenBottomPadding()
             }
+            .refreshable { await store.sync() }
         }
         .background(Theme.Colors.background)
         .toolbar(.hidden, for: .navigationBar)

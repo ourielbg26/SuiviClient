@@ -17,21 +17,46 @@ enum DriveBridge {
 
     private static var baseURL: URL? { DriveConfig.isConfigured ? URL(string: DriveConfig.webAppURL) : nil }
 
+    /// Le script lit chaque fiche une à une sur Drive : un `pull` peut prendre plus d'une
+    /// minute, au-delà du délai par défaut de 60 s d'`URLSession.shared`.
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 300
+        config.timeoutIntervalForResource = 300
+        return URLSession(configuration: config)
+    }()
+
     private static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.dateEncodingStrategy = .iso8601
         return e
     }()
 
+    /// Le script (`new Date().toISOString()`) écrit les dates avec millisecondes, que
+    /// `.iso8601` refuse — on accepte donc les deux formes.
     private static let decoder: JSONDecoder = {
         let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
+        d.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+            let withFraction = ISO8601DateFormatter()
+            withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = withFraction.date(from: string) ?? ISO8601DateFormatter().date(from: string) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Date invalide : \(string)")
+        }
         return d
     }()
 
+    /// Google renvoie parfois une page 404 quand le script met trop longtemps à répondre :
+    /// on retente une fois avant d'abandonner.
     static func pull() async throws -> PullResult {
-        let data = try await get(action: "pull")
-        return try decoder.decode(PullResult.self, from: data)
+        do {
+            return try decoder.decode(PullResult.self, from: try await get(action: "pull"))
+        } catch {
+            return try decoder.decode(PullResult.self, from: try await get(action: "pull"))
+        }
     }
 
     @discardableResult
@@ -72,7 +97,7 @@ enum DriveBridge {
             URLQueryItem(name: "action", value: action),
             URLQueryItem(name: "secret", value: DriveConfig.secret)
         ] + extra
-        let (data, response) = try await URLSession.shared.data(from: comps.url!)
+        let (data, response) = try await session.data(from: comps.url!)
         try checkResponse(response)
         return data
     }
@@ -88,7 +113,7 @@ enum DriveBridge {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = bodyData
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         try checkResponse(response)
         return data
     }

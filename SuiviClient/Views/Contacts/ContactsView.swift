@@ -77,6 +77,7 @@ struct ContactsView: View {
                 .padding(.horizontal, Theme.Spacing.contentMargin)
                 .screenBottomPadding()
             }
+            .refreshable { await store.sync() }
         }
         .background(Theme.Colors.background)
         .toolbar(.hidden, for: .navigationBar)

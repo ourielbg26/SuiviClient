@@ -10,7 +10,7 @@ struct ClientDetailView: View {
 
     private var rows: [TransactionEntry] {
         client.transactions
-            .sorted { $0.dropDate > $1.dropDate }
+            .sorted(by: AppTransaction.byArrivalNewestFirst)
             .map { TransactionEntry(clientID: client.id, clientName: client.name, phone: client.phone, transaction: $0) }
     }
 

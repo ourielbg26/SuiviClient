@@ -41,7 +41,7 @@ struct TransactionDetailView: View {
     @ViewBuilder
     private func content(_ transaction: TransactionEntry) -> some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: "Fiche \(transaction.ref)") {
+            ScreenHeader(title: transaction.ficheLabel) {
                 NavigationLink(value: AppRoute.editTransactionForm(clientID: clientID, transactionID: transactionID)) {
                     HStack(spacing: 6) {
                         Image(systemName: "pencil")
@@ -185,7 +185,7 @@ struct TransactionDetailView: View {
                     detailRow("Retour le", Formatters.shortDate(ret), color: Theme.Colors.unpaidText)
                     detailRow("Récupéré (2ᵉ fois)", transaction.pickup2Date.map(Formatters.shortDate) ?? "en attente", color: transaction.pickup2Date == nil ? Theme.Colors.unpaidText : nil)
                 }
-                detailRow("Référence", transaction.ref, showDivider: false)
+                detailRow("Référence", transaction.ficheLabel, showDivider: false)
             }
         }
     }

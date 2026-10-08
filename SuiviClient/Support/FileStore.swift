@@ -79,13 +79,6 @@ final class FileStore {
         try? fm.removeItem(at: clientsDir.appendingPathComponent("\(id.uuidString).json"))
     }
 
-    /// Efface toute la copie locale (clientes + catalogue) — utilisé pour repartir d'une
-    /// copie fraîche de Drive, sans toucher à Drive lui-même.
-    func wipeLocalData() {
-        try? fm.removeItem(at: clientsDir)
-        try? fm.removeItem(at: catalogURL)
-    }
-
     // MARK: - Catalogue
 
     func loadCatalog() -> CatalogData {

@@ -23,11 +23,11 @@ enum Formatters {
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "fr_FR")
-        f.dateFormat = "d MMM"
+        f.dateFormat = "d MMM yyyy"
         return f
     }()
 
-    /// "24 août"
+    /// "24 août 2024"
     static func shortDate(_ date: Date) -> String {
         shortDateFormatter.string(from: date)
     }

@@ -15,6 +15,9 @@ final class DataStore {
     private(set) var catalog: CatalogData = CatalogData()
     private(set) var photoManifest: Set<String> = []
     private(set) var isSyncing = false
+    /// false jusqu'à la fin de la première synchro du lancement (réussie ou non) — tant
+    /// que c'est false, l'app affiche l'écran de chargement (`SplashView`).
+    private(set) var hasFinishedLaunchSync = false
     private(set) var lastSyncError: String?
 
     private var pendingDeletes: Set<UUID>
@@ -25,113 +28,108 @@ final class DataStore {
         self.clients = fileStore.loadAllClients()
         self.catalog = fileStore.loadCatalog()
         self.pendingDeletes = fileStore.loadPendingDeletes()
-        if UserDefaults.standard.bool(forKey: Self.previewFlagKey) {
-            clients = SampleData.makeClients()
-            catalog = SampleData.makeCatalog()
-        } else {
-            syncAtLaunch()
-        }
-    }
-
-    private static let previewFlagKey = "SuiviClient.isPreviewingSampleData"
-
-    /// true tant que l'app affiche les données d'exemple (`loadSampleDataForTesting`) —
-    /// la synchro Drive est suspendue pendant ce temps pour ne jamais y renvoyer du faux.
-    private(set) var isPreviewingSampleData: Bool {
-        get { UserDefaults.standard.bool(forKey: Self.previewFlagKey) }
-        set { UserDefaults.standard.set(newValue, forKey: Self.previewFlagKey) }
-    }
-
-    /// Recharge une copie neuve depuis Drive, en écrasant le cache local — utile pour
-    /// sortir du mode "données d'exemple" ou si le cache local est resté désynchronisé.
-    func resetLocalCacheAndResync() {
-        isPreviewingSampleData = false
-        fileStore.wipeLocalData()
-        clients = []
-        catalog = CatalogData()
-        photoManifest = []
         syncAtLaunch()
     }
 
-    /// Données d'exemple pour tester l'interface (debug uniquement) — purement locales,
-    /// jamais envoyées sur Drive : tant que ce mode est actif, `syncAtLaunch()` ne fait
-    /// plus rien, pour ne jamais mélanger du faux avec les vraies données de Drive.
-    /// `resetLocalCacheAndResync()` en sort et revient aux vraies données.
-    func loadSampleDataForTesting() {
-        isPreviewingSampleData = true
-        clients = SampleData.makeClients()
-        catalog = SampleData.makeCatalog()
-    }
+    // MARK: - Synchro Drive
 
-    // MARK: - Synchro Drive au lancement
+    private var syncTask: Task<Void, Never>?
+
+    func syncAtLaunch() {
+        Task { @MainActor in await sync() }
+    }
 
     /// Envoie les suppressions/photos restées en attente, puis réconcilie chaque cliente
     /// et le catalogue avec Drive (le `version` le plus haut gagne). Si Drive n'est pas
-    /// joignable, l'app continue avec la copie locale — rien ne bloque.
-    func syncAtLaunch() {
-        guard DriveConfig.isConfigured, !isPreviewingSampleData else { return }
-        Task { @MainActor in
-            isSyncing = true
-            defer { isSyncing = false }
-            do {
-                for id in pendingDeletes {
-                    try? await DriveBridge.deleteClient(id: id)
+    /// joignable, l'app continue avec la copie locale — rien ne bloque. Appelée au
+    /// lancement, au retour dans l'app et par "tirer pour rafraîchir" ; si une synchro
+    /// est déjà en cours, on attend simplement sa fin au lieu d'en lancer une deuxième.
+    @MainActor
+    func sync() async {
+        guard DriveConfig.isConfigured else {
+            hasFinishedLaunchSync = true
+            return
+        }
+        if let syncTask {
+            await syncTask.value
+            return
+        }
+        let task = Task { @MainActor in await performSync() }
+        syncTask = task
+        await task.value
+        syncTask = nil
+    }
+
+    @MainActor
+    private func performSync() async {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            hasFinishedLaunchSync = true
+        }
+        do {
+            for id in pendingDeletes {
+                try? await DriveBridge.deleteClient(id: id)
+            }
+            pendingDeletes.removeAll()
+            fileStore.savePendingDeletes(pendingDeletes)
+
+            for name in fileStore.pendingPhotoNames() {
+                if let data = fileStore.pendingPhotoData(name: name),
+                   (try? await DriveBridge.uploadPhoto(name: name, data: data)) != nil {
+                    fileStore.removePendingPhoto(name: name)
                 }
-                pendingDeletes.removeAll()
-                fileStore.savePendingDeletes(pendingDeletes)
+            }
 
-                for name in fileStore.pendingPhotoNames() {
-                    if let data = fileStore.pendingPhotoData(name: name),
-                       (try? await DriveBridge.uploadPhoto(name: name, data: data)) != nil {
-                        fileStore.removePendingPhoto(name: name)
-                    }
-                }
+            let remote = try await DriveBridge.pull()
 
-                let remote = try await DriveBridge.pull()
-
-                var merged = Dictionary(uniqueKeysWithValues: clients.map { ($0.id, $0) })
-                for remoteClient in remote.clients {
-                    if let local = merged[remoteClient.id] {
-                        if local.version > remoteClient.version {
-                            if let pushed = try? await DriveBridge.pushClient(local) {
-                                merged[local.id] = pushed
-                                fileStore.save(pushed)
-                            }
-                        } else if remoteClient.version > local.version {
-                            merged[remoteClient.id] = remoteClient
-                            fileStore.save(remoteClient)
+            var merged = Dictionary(uniqueKeysWithValues: clients.map { ($0.id, $0) })
+            for remoteClient in remote.clients {
+                if let local = merged[remoteClient.id] {
+                    if local.version > remoteClient.version {
+                        if let pushed = try? await DriveBridge.pushClient(local) {
+                            merged[local.id] = pushed
+                            fileStore.save(pushed)
                         }
-                    } else {
+                    } else if remoteClient.version > local.version {
                         merged[remoteClient.id] = remoteClient
                         fileStore.save(remoteClient)
                     }
+                } else {
+                    merged[remoteClient.id] = remoteClient
+                    fileStore.save(remoteClient)
                 }
-                let remoteIDs = Set(remote.clients.map(\.id))
-                let localOnlyIDs = merged.keys.filter { !remoteIDs.contains($0) }
-                for id in localOnlyIDs {
-                    guard let local = merged[id] else { continue }
-                    if let pushed = try? await DriveBridge.pushClient(local) {
-                        merged[id] = pushed
-                        fileStore.save(pushed)
-                    }
-                }
-                clients = Array(merged.values)
-
-                if catalog.version > remote.catalog.version {
-                    if let pushed = try? await DriveBridge.pushCatalog(catalog) {
-                        catalog = pushed
-                        fileStore.save(pushed)
-                    }
-                } else if remote.catalog.version > catalog.version {
-                    catalog = remote.catalog
-                    fileStore.save(remote.catalog)
-                }
-
-                photoManifest = Set(remote.photoNames).union(fileStore.pendingPhotoNames())
-                lastSyncError = nil
-            } catch {
-                lastSyncError = "Hors ligne — synchro au prochain lancement."
             }
+            let remoteIDs = Set(remote.clients.map(\.id))
+            let localOnlyIDs = merged.keys.filter { !remoteIDs.contains($0) }
+            for id in localOnlyIDs {
+                guard let local = merged[id] else { continue }
+                if let pushed = try? await DriveBridge.pushClient(local) {
+                    merged[id] = pushed
+                    fileStore.save(pushed)
+                }
+            }
+            // Une fiche modifiée sur ce téléphone pendant la synchro (qui peut durer
+            // plusieurs secondes) a une version plus récente : on la garde.
+            for current in clients where (merged[current.id]?.version ?? -1) < current.version {
+                merged[current.id] = current
+            }
+            clients = Array(merged.values)
+
+            if catalog.version > remote.catalog.version {
+                if let pushed = try? await DriveBridge.pushCatalog(catalog) {
+                    catalog = pushed
+                    fileStore.save(pushed)
+                }
+            } else if remote.catalog.version > catalog.version {
+                catalog = remote.catalog
+                fileStore.save(remote.catalog)
+            }
+
+            photoManifest = Set(remote.photoNames).union(fileStore.pendingPhotoNames())
+            lastSyncError = nil
+        } catch {
+            lastSyncError = "Hors ligne — synchro à la prochaine ouverture."
         }
     }
 
@@ -290,7 +288,7 @@ final class DataStore {
             clients.removeAll { $0.id == client.id }
             pendingDeletes.insert(client.id)
             fileStore.savePendingDeletes(pendingDeletes)
-            guard DriveConfig.isConfigured, !isPreviewingSampleData else { return }
+            guard DriveConfig.isConfigured else { return }
             let deletedID = client.id
             Task { @MainActor in
                 if (try? await DriveBridge.deleteClient(id: deletedID)) != nil {
@@ -312,7 +310,7 @@ final class DataStore {
         updated.updatedAt = .now
         fileStore.save(updated)
         upsert(updated)
-        guard DriveConfig.isConfigured, !isPreviewingSampleData else { return }
+        guard DriveConfig.isConfigured else { return }
         let toPush = updated
         Task { @MainActor in
             if let pushed = try? await DriveBridge.pushClient(toPush) {
@@ -359,7 +357,7 @@ final class DataStore {
         toSave.version += 1
         fileStore.save(toSave)
         catalog = toSave
-        guard DriveConfig.isConfigured, !isPreviewingSampleData else { return }
+        guard DriveConfig.isConfigured else { return }
         let toPush = toSave
         Task { @MainActor in
             if let pushed = try? await DriveBridge.pushCatalog(toPush) {
@@ -383,7 +381,7 @@ final class DataStore {
         let name = nextPhotoName(transactionID: transactionID, kind: kind)
         photoManifest.insert(name)
         fileStore.stagePendingPhoto(data, name: name)
-        guard DriveConfig.isConfigured, !isPreviewingSampleData else { return }
+        guard DriveConfig.isConfigured else { return }
         Task { @MainActor in
             if (try? await DriveBridge.uploadPhoto(name: name, data: data)) != nil {
                 fileStore.removePendingPhoto(name: name)
@@ -407,7 +405,7 @@ final class DataStore {
         for name in fileStore.pendingPhotoNames() where name.hasPrefix(prefix) {
             fileStore.removePendingPhoto(name: name)
         }
-        guard DriveConfig.isConfigured, !isPreviewingSampleData else { return }
+        guard DriveConfig.isConfigured else { return }
         Task { @MainActor in try? await DriveBridge.deletePhotos(transactionID: transactionID) }
     }
 
@@ -416,7 +414,7 @@ final class DataStore {
     func loadPhotoData(name: String) async -> Data? {
         if let pending = fileStore.pendingPhotoData(name: name) { return pending }
         if let cached = fileStore.cachedPhotoData(name: name) { return cached }
-        guard DriveConfig.isConfigured, !isPreviewingSampleData, let data = try? await DriveBridge.downloadPhoto(name: name) else { return nil }
+        guard DriveConfig.isConfigured, let data = try? await DriveBridge.downloadPhoto(name: name) else { return nil }
         fileStore.cachePhotoData(data, name: name)
         return data
     }

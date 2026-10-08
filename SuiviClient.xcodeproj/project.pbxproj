@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5A1C0E7D3B2F4A6E8C9D0B12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0E7D3B2F4A6E8C9D0B11 /* Assets.xcassets */; };
 		0876826F38AD4764E6BC9A96 /* TransactionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231C2E2AFB97136F2353174F /* TransactionsListView.swift */; };
 		09609D70D22CDF0BE76CD01B /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4834202815837FF5E698C48 /* AppRoute.swift */; };
 		1B74F9A90E01F3EA2289EAD9 /* FloatingTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F01FC6F9279484234423754 /* FloatingTabBar.swift */; };
@@ -35,7 +36,6 @@
 		957F63EFB9D9BAA9EE93EC62 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D127EC422A84AE22C7ED17 /* Formatters.swift */; };
 		9E25C76F4E41C803ABEDC783 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8912278445E3505BE00EA767 /* Enums.swift */; };
 		A52C02F5B8893C08C8BE0EB1 /* Pills.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56819D68BA2E994F136FECA1 /* Pills.swift */; };
-		AC2F72A07E76455197222DCD /* SampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A621030B11AFCCAC6B91A492 /* SampleData.swift */; };
 		BB6A7BDCC62AD93FF4171456 /* Montserrat-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 648E777181265A65CB64FC39 /* Montserrat-SemiBold.ttf */; };
 		C735AF8FCF419F2DF22CEF7F /* SuggestionField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5373A8F0D3516EC5421CC2A /* SuggestionField.swift */; };
 		CA237283409470BAD3EF5CEB /* ChipButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64F8B568F1C3FC582678ACD1 /* ChipButton.swift */; };
@@ -54,6 +54,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5A1C0E7D3B2F4A6E8C9D0B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		069909897D5BEE6B4FC798EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		0F01FC6F9279484234423754 /* FloatingTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FloatingTabBar.swift; sourceTree = "<group>"; };
 		17E8B1087385F037F804B74D /* SuiviClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SuiviClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,7 +84,6 @@
 		913B001F9DEBFF80AD348FBB /* TransactionFormView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TransactionFormView.swift; sourceTree = "<group>"; };
 		9F79214DCF0D38F1412D1A56 /* ImageCompressor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
 		A0945B087FF5B939107C83ED /* Montserrat-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "Montserrat-Medium.ttf"; sourceTree = "<group>"; };
-		A621030B11AFCCAC6B91A492 /* SampleData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleData.swift; sourceTree = "<group>"; };
 		AA5D0E1882A41984F15BF20E /* SuiviClientApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SuiviClientApp.swift; sourceTree = "<group>"; };
 		B2F993F154B172E660820E75 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B8C96AA322398D793AB304F3 /* ScreenHeader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ScreenHeader.swift; sourceTree = "<group>"; };
@@ -216,6 +216,7 @@
 		A8874DB8697129C4028351DC /* SuiviClient */ = {
 			isa = PBXGroup;
 			children = (
+				5A1C0E7D3B2F4A6E8C9D0B11 /* Assets.xcassets */,
 				E5482A23B8E65E01FD4362B3 /* Fonts */,
 				B2F993F154B172E660820E75 /* Info.plist */,
 				4CDF2F3BB3BD481CC3409C8F /* Models */,
@@ -237,7 +238,6 @@
 				F5DAF05C974EE27E760BB5ED /* FixedOptions.swift */,
 				89D127EC422A84AE22C7ED17 /* Formatters.swift */,
 				9F79214DCF0D38F1412D1A56 /* ImageCompressor.swift */,
-				A621030B11AFCCAC6B91A492 /* SampleData.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -372,6 +372,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A1C0E7D3B2F4A6E8C9D0B12 /* Assets.xcassets in Resources */,
 				66599ADBF46C173256DFB917 /* Montserrat-Medium.ttf in Resources */,
 				3182B097B605893F6FE75247 /* Montserrat-Regular.ttf in Resources */,
 				BB6A7BDCC62AD93FF4171456 /* Montserrat-SemiBold.ttf in Resources */,
@@ -400,7 +401,6 @@
 				E583E84BC44D9B7DF28C1DC3 /* FixedOptions.swift in Sources */,
 				957F63EFB9D9BAA9EE93EC62 /* Formatters.swift in Sources */,
 				230AD595BE093E6B12B8E3D6 /* ImageCompressor.swift in Sources */,
-				AC2F72A07E76455197222DCD /* SampleData.swift in Sources */,
 				DE5850BD5E23FFE15B11FA9E /* Theme.swift in Sources */,
 				3A765EC13B032289FD228847 /* Avatar.swift in Sources */,
 				CA237283409470BAD3EF5CEB /* ChipButton.swift in Sources */,

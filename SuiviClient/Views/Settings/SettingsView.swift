@@ -5,6 +5,8 @@ struct SettingsView: View {
 
     @State private var selected: CatalogType = .reparation
     @State private var newEntry = ""
+    /// Entrée dont on a touché la croix — la suppression attend la confirmation.
+    @State private var pendingDelete: CatalogItem?
 
     private var entries: [CatalogItem] { store.catalog[selected] }
 
@@ -86,7 +88,7 @@ struct SettingsView: View {
                                         }
                                         Spacer()
                                         Button {
-                                            store.removeCatalogEntry(type: selected, id: e.id)
+                                            pendingDelete = e
                                         } label: {
                                             Image(systemName: "xmark")
                                                 .font(.system(size: 12, weight: .semibold))
@@ -109,6 +111,18 @@ struct SettingsView: View {
                 .padding(.horizontal, Theme.Spacing.contentMargin)
                 .screenBottomPadding()
             }
+            .alert(
+                "Supprimer « \(pendingDelete?.name ?? "") » ?",
+                isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+                presenting: pendingDelete
+            ) { item in
+                Button("Supprimer", role: .destructive) {
+                    store.removeCatalogEntry(type: selected, id: item.id)
+                }
+                Button("Annuler", role: .cancel) {}
+            } message: { item in
+                Text("Elle ne sera plus proposée quand tu remplis une fiche. Les fiches déjà enregistrées ne changent pas.")
+            }
         }
         .background(Theme.Colors.background)
         .toolbar(.hidden, for: .navigationBar)
@@ -118,44 +132,12 @@ struct SettingsView: View {
 
     private var storageCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if store.isPreviewingSampleData {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Mode test actif").font(AppFont.montserrat(15, weight: .semibold))
-                    Text("Tu vois des données d'exemple, pas les vraies. Rien n'est envoyé sur Drive tant que tu es dans ce mode.")
-                        .font(AppFont.montserrat(12))
-                        .foregroundStyle(Theme.Colors.textSecondary)
-                    PrimaryButton(title: "Revenir aux vraies données") {
-                        store.resetLocalCacheAndResync()
-                    }
-                }
-            } else {
-                Text("Sauvegarde").font(AppFont.montserrat(15, weight: .semibold))
-                HStack(spacing: 8) {
-                    Circle().fill(statusColor).frame(width: 8, height: 8)
-                    Text(statusText)
-                        .font(AppFont.montserrat(12))
-                        .foregroundStyle(Theme.Colors.textSecondary)
-                }
-                if DriveConfig.isConfigured {
-                    Button {
-                        store.resetLocalCacheAndResync()
-                    } label: {
-                        Text("Recharger depuis Drive")
-                            .font(AppFont.montserrat(13, weight: .semibold))
-                            .padding(.horizontal, 14)
-                            .frame(height: 42)
-                            .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(.white))
-                            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-                #if DEBUG
-                Button("Charger des données de test (debug)") {
-                    store.loadSampleDataForTesting()
-                }
-                .font(AppFont.montserrat(12, weight: .semibold))
-                .foregroundStyle(Theme.Colors.textSecondary)
-                #endif
+            Text("Sauvegarde").font(AppFont.montserrat(15, weight: .semibold))
+            HStack(spacing: 8) {
+                Circle().fill(statusColor).frame(width: 8, height: 8)
+                Text(statusText)
+                    .font(AppFont.montserrat(12))
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
         }
         .padding(18)

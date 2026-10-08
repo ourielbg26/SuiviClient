@@ -64,16 +64,15 @@ connexion, rien de bloquant).
   quasi en même temps, la dernière synchronisée l'emporte — l'autre modification est
   perdue côté partagé (une copie `.bak` reste récupérable à la main, en local et dans
   `Backups/` sur Drive), mais rien n'avertit sur le moment.
-- La synchro se déclenche **au lancement de l'app** (pas en continu pendant qu'elle
-  tourne) — pense à rouvrir l'app sur les deux iPhone après une série de modifications
-  importantes.
+- La synchro se déclenche **au lancement de l'app, à chaque retour dans l'app** (après
+  être passé par une autre app) et quand on **tire la liste vers le bas** sur l'Accueil,
+  les Transactions ou les Contacts — pas en continu pendant qu'elle reste ouverte à
+  l'écran.
 
-## Données d'exemple
+## Données
 
-Un jeu de données de démo se charge automatiquement **uniquement en build Debug**
-(`Support/SampleData.swift`, `DebugFlags.useSampleData`). Pour lancer l'app à vide même
-en debug, passe cette constante à `false`. En build Release (App Store / TestFlight),
-l'app démarre toujours vide.
+Il n'y a aucune donnée d'exemple : simulateur comme iPhone, l'app affiche toujours les
+vraies données de Google Drive (écran de chargement au lancement le temps de les récupérer).
 
 ## Libertés prises par rapport au HTML
 
