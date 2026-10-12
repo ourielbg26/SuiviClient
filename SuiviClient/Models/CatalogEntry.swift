@@ -6,11 +6,17 @@ struct CatalogItem: Identifiable, Codable, Hashable {
     var id: UUID
     var name: String
     var createdAt: Date
+    /// Prix préenregistré — proposé dans le formulaire, modifiable fiche par fiche.
+    var price: Decimal?
+    /// Prix à l'unité ("ligne") : le formulaire demande alors combien en ajouter.
+    var unit: String?
 
-    init(id: UUID = UUID(), name: String, createdAt: Date = .now) {
+    init(id: UUID = UUID(), name: String, createdAt: Date = .now, price: Decimal? = nil, unit: String? = nil) {
         self.id = id
         self.name = name
         self.createdAt = createdAt
+        self.price = price
+        self.unit = unit
     }
 }
 

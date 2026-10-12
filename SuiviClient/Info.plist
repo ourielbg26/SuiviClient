@@ -35,8 +35,9 @@
   </array>
   <key>UIAppFonts</key>
   <array>
-    <string>PlayfairDisplay-Bold.ttf</string>
-    <string>PlayfairDisplay-SemiBold.ttf</string>
+    <string>CormorantGaramond-Regular.ttf</string>
+    <string>CormorantGaramond-Medium.ttf</string>
+    <string>CormorantGaramond-SemiBold.ttf</string>
     <string>Montserrat-Regular.ttf</string>
     <string>Montserrat-Medium.ttf</string>
     <string>Montserrat-SemiBold.ttf</string>

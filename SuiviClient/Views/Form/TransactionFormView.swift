@@ -73,8 +73,19 @@ struct TransactionFormView: View {
                 .screenBottomPadding()
             }
         }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
+        // Choix d'une réparation, d'une colorimétrie ou d'un lavage : le prix se remplit
+        // avec le prix préenregistré (toujours modifiable ensuite pour un cas particulier).
+        .onChange(of: priceInputs) {
+            if let suggested = store.suggestedPrice(for: draft) { draft.price = "\(suggested)" }
+        }
+    }
+
+    /// Ce qui détermine le prix proposé.
+    private var priceInputs: [String] {
+        [draft.category.rawValue, draft.typeCouleur, draft.lavage, draft.finition]
+            + draft.reparations.map { "\($0)×\(draft.reparationQuantities[$0] ?? 1)" }
     }
 
     // MARK: Cliente
@@ -162,7 +173,7 @@ struct TransactionFormView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Catégorie").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
                     FlowLayout(spacing: 7) {
-                        ForEach(Category.allCases) { cat in
+                        ForEach(Category.selectable) { cat in
                             ChipButton(label: cat.rawValue, isActive: draft.category == cat) { draft.category = cat }
                         }
                     }
@@ -200,15 +211,26 @@ struct TransactionFormView: View {
                              entries: store.catalog[.reparation], usageCount: store.usageCount,
                              onSaveNewEntry: { store.addCatalogEntry(type: .reparation, name: $0) },
                              query: $repQuery, selection: $draft.reparations)
+            ForEach(draft.reparations.filter { store.catalogItem(type: .reparation, named: $0)?.unit != nil }, id: \.self) { name in
+                let unit = store.catalogItem(type: .reparation, named: name)?.unit ?? ""
+                let qty = draft.reparationQuantities[name] ?? 1
+                Stepper(value: Binding(get: { qty }, set: { draft.reparationQuantities[name] = $0 }), in: 1...50) {
+                    Text("\(name) : \(qty) \(unit)\(qty > 1 ? "s" : "")")
+                        .font(AppFont.montserrat(13, weight: .medium))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.background))
+            }
         case .coupe:
-            optionGroup("Type de coupe", options: FixedOptions.coupes, selected: draft.coupe) { draft.coupe = $0 }
+            EmptyView()
         case .couleur:
-            SuggestionField(label: "Type de coloration", placeholder: "Racine, balayage…", catalogType: .typeCouleur, multi: false,
+            SuggestionField(label: "Colorimétrie", placeholder: "Racine, balayage…", catalogType: .typeCouleur, multi: false,
                              accentBg: Category.couleur.backgroundColor, accentFg: Category.couleur.textColor,
                              entries: store.catalog[.typeCouleur], usageCount: store.usageCount,
                              onSaveNewEntry: { store.addCatalogEntry(type: .typeCouleur, name: $0) },
                              query: $typeQuery, selection: bindingArray(\.typeCouleur))
-            SuggestionField(label: "Couleur", placeholder: "Blond 613…", catalogType: .couleur, multi: false,
+            SuggestionField(label: "Teinte", placeholder: "6.1 Châtain foncé cendré…", catalogType: .couleur, multi: false,
                              accentBg: Category.couleur.backgroundColor, accentFg: Category.couleur.textColor,
                              entries: store.catalog[.couleur], usageCount: store.usageCount,
                              onSaveNewEntry: { store.addCatalogEntry(type: .couleur, name: $0) },
@@ -239,11 +261,10 @@ struct TransactionFormView: View {
                 }
             }
         case .vente:
-            SuggestionField(label: "Couleur", placeholder: "Blond 613…", catalogType: .couleur, multi: false,
-                             accentBg: Category.vente.backgroundColor, accentFg: Category.vente.textColor,
-                             entries: store.catalog[.couleur], usageCount: store.usageCount,
-                             onSaveNewEntry: { store.addCatalogEntry(type: .couleur, name: $0) },
-                             query: $couleurQuery, selection: bindingArray(\.couleur))
+            // Les couleurs des perruques vendues ont leur propre liste (≠ teintes).
+            optionGroup("Couleur", options: FixedOptions.venteCouleurs, selected: draft.couleur.replacingOccurrences(of: "Couleur ", with: "")) {
+                draft.couleur = "Couleur \($0)"
+            }
             optionGroup("Provenance", options: Origine.allCases.map(\.rawValue), selected: draft.origine.rawValue) { draft.origine = Origine(rawValue: $0) ?? .stock }
             optionGroup("Taille du bonnet", options: FixedOptions.tailles, selected: draft.taille) { draft.taille = $0 }
             optionGroup("Texture", options: FixedOptions.textures, selected: draft.texture) { draft.texture = $0 }
@@ -286,7 +307,7 @@ struct TransactionFormView: View {
                             .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
                     }
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Date de dépôt").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+                        Text(draft.category == .vente ? "Date de commande" : "Date de dépôt").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
                         DatePicker("", selection: $draft.dropDate, displayedComponents: .date)
                             .labelsHidden()
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -324,57 +345,26 @@ struct TransactionFormView: View {
                 if draft.category == .vente {
                     venteAcompteSection
                 } else {
-                    optionGroup("Paiement", options: TransactionFormDraft.PayChoice.allCases.map(\.rawValue), selected: draft.pay.rawValue) {
+                    optionGroup("Paiement", options: TransactionFormDraft.PayChoice.allCases
+                                    .filter { $0 != .plusieursFois || draft.category.allowsInstallments }.map(\.rawValue),
+                                selected: draft.pay.rawValue) {
                         draft.pay = TransactionFormDraft.PayChoice(rawValue: $0) ?? .pasEncore
                     }
 
                     if draft.pay == .paye {
-                        optionGroup("Réglé en", options: PayMethod.allCases.map(\.rawValue), selected: draft.method.rawValue) {
-                            draft.method = PayMethod(rawValue: $0) ?? .especes
-                        }
+                        payMethodGroup
                     }
 
-                    if draft.pay == .plusieursFois {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Paiement en plusieurs fois — espèces ou chèque.")
-                                .font(AppFont.montserrat(12))
-                                .foregroundStyle(Theme.Colors.textSecondary)
-                            HStack(spacing: 10) {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Déjà versé (₪)").font(AppFont.montserrat(11, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
-                                    TextField("50", text: $draft.planPaid)
-                                        .keyboardType(.numberPad)
-                                        .font(AppFont.montserrat(13))
-                                        .padding(10)
-                                        .background(RoundedRectangle(cornerRadius: 12).fill(.white))
-                                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.Colors.border, lineWidth: 1))
-                                }
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Échéance").font(AppFont.montserrat(11, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
-                                    DatePicker("", selection: $draft.planDue, displayedComponents: .date)
-                                        .labelsHidden()
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 10).padding(.vertical, 6)
-                                        .background(RoundedRectangle(cornerRadius: 12).fill(.white))
-                                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.Colors.border, lineWidth: 1))
-                                }
-                            }
-                            FlowLayout(spacing: 7) {
-                                ForEach(["Espèces", "Chèque"], id: \.self) { opt in
-                                    ChipButton(label: opt, isActive: draft.planMethod.rawValue == opt) { draft.planMethod = PayMethod(rawValue: opt) ?? .especes }
-                                }
-                            }
-                        }
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: Theme.Radius.innerTile).fill(Theme.Colors.background))
+                    if draft.pay == .plusieursFois && draft.category.allowsInstallments {
+                        installmentFields(alreadyPaid: Decimal(string: draft.planPaid) ?? 0, showsAlreadyPaid: true)
                     }
                 }
             }
         }
     }
 
-    /// Vente : une seule case "Acompte reçu" — le statut (payé / en attente d'un reste)
-    /// se déduit du montant saisi comparé au prix, pas d'un choix Pas encore/Payé séparé.
+    /// Vente : "Acompte reçu" (gardé même une fois tout payé), puis — s'il ne couvre pas le
+    /// prix — si le reste a déjà été réglé ou non.
     private var venteAcompteSection: some View {
         let reste = draft.priceValue - draft.venteAcompteValue
         return VStack(alignment: .leading, spacing: 10) {
@@ -387,32 +377,83 @@ struct TransactionFormView: View {
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.background))
                     .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
                 if draft.venteAcompteValue > 0 {
-                    Text(reste > 0 ? "Reste à payer : \(Formatters.money(reste))" : "Payée en totalité.")
+                    Text(reste > 0 ? "Reste après l'acompte : \(Formatters.money(reste))" : "L'acompte couvre tout le prix.")
                         .font(AppFont.montserrat(11))
                         .foregroundStyle(Theme.Colors.textSecondary)
                 }
             }
 
-            optionGroup("Réglé en", options: PayMethod.allCases.map(\.rawValue), selected: draft.method.rawValue) {
-                draft.method = PayMethod(rawValue: $0) ?? .especes
+            if reste > 0 {
+                optionGroup("Le reste", options: ["Pas encore payé", "Payé"], selected: draft.venteSoldePaye ? "Payé" : "Pas encore payé") {
+                    draft.venteSoldePaye = $0 == "Payé"
+                }
             }
 
-            if draft.venteAcompteValue > 0 && reste > 0 {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack {
-                        Text("Échéance du solde").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
-                        Spacer()
-                        DatePicker("", selection: $draft.planDue, displayedComponents: .date).labelsHidden()
-                    }
-                    FlowLayout(spacing: 7) {
-                        ForEach(["Espèces", "Chèque"], id: \.self) { opt in
-                            ChipButton(label: opt, isActive: draft.planMethod.rawValue == opt) { draft.planMethod = PayMethod(rawValue: opt) ?? .especes }
-                        }
-                    }
+            // Le moyen choisi ici (espèces / carte) vaut pour toute la vente.
+            installmentFields(alreadyPaid: draft.venteAcompteValue, showsAlreadyPaid: false)
+        }
+    }
+
+    private var payMethodGroup: some View {
+        optionGroup("Réglé en", options: PayMethod.choices.map(\.label), selected: draft.method.label) { label in
+            draft.method = PayMethod.choices.first { $0.label == label } ?? .especes
+        }
+    }
+
+    /// Paiement en plusieurs fois : moyen, nombre de mensualités, date de la 1ʳᵉ — les
+    /// suivantes tombent le même jour des mois suivants.
+    private func installmentFields(alreadyPaid: Decimal, showsAlreadyPaid: Bool) -> some View {
+        let left = draft.priceValue - alreadyPaid
+        return VStack(alignment: .leading, spacing: 12) {
+            FlowLayout(spacing: 7) {
+                ForEach(PayMethod.installmentChoices) { m in
+                    ChipButton(label: m.label, isActive: draft.planMethod == m) { draft.planMethod = m }
                 }
-                .padding(14)
-                .background(RoundedRectangle(cornerRadius: Theme.Radius.innerTile).fill(Theme.Colors.background))
             }
+            if showsAlreadyPaid {
+                installmentField("Déjà versé (₪)", placeholder: "0", text: $draft.planPaid)
+            }
+            HStack {
+                Text("Mensualités").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+                Spacer()
+                Picker("Mensualités", selection: Binding(get: { draft.planCountValue ?? 0 },
+                                                         set: { draft.planCount = $0 > 0 ? String($0) : "" })) {
+                    Text("—").tag(0)
+                    ForEach(1...10, id: \.self) { n in Text("\(n)").tag(n) }
+                }
+                .pickerStyle(.menu)
+                .tint(Theme.Colors.textPrimary)
+            }
+            HStack {
+                Text("1ʳᵉ mensualité le").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+                Spacer()
+                DatePicker("", selection: $draft.planDue, displayedComponents: .date).labelsHidden()
+            }
+            if let count = draft.planCountValue, left > 0 {
+                let last = Calendar.current.date(byAdding: .month, value: count - 1, to: draft.planDue) ?? draft.planDue
+                Text("\(count) × \(Formatters.money(left / Decimal(count))) · dernière le \(Formatters.shortDate(last))")
+                    .font(AppFont.montserrat(12, weight: .semibold))
+                    .foregroundStyle(Theme.Colors.installmentText)
+            }
+            if draft.planMethod == .especes {
+                Text("Espèces : tu noteras chaque paiement reçu dans la fiche. En retard, la fiche passe en « Non payé ».")
+                    .font(AppFont.montserrat(11))
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.innerTile).fill(Theme.Colors.background))
+    }
+
+    private func installmentField(_ label: String, placeholder: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label).font(AppFont.montserrat(11, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+            TextField(placeholder, text: text)
+                .keyboardType(.numberPad)
+                .font(AppFont.montserrat(13))
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.Colors.card))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.Colors.border, lineWidth: 1))
         }
     }
 
@@ -441,7 +482,7 @@ struct TransactionFormView: View {
     private func card(@ViewBuilder content: () -> some View) -> some View {
         content()
             .padding(18)
-            .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
             .cardShadow()
     }
 }

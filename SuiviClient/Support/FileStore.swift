@@ -1,6 +1,11 @@
 import Foundation
 
-enum PhotoKind: String { case avant, apres }
+enum PhotoKind: String {
+    case avant, apres
+
+    /// Une vente se photographie une fois prête ("après") ; le reste à l'arrivée ("avant").
+    init(for category: Category) { self = category == .vente ? .apres : .avant }
+}
 
 /// Accès disque local — toujours dans le bac à sable de l'app (aucun dossier choisi par
 /// l'utilisatrice). Le partage entre iPhone passe par `DriveBridge` (Google Drive via le
@@ -9,9 +14,8 @@ enum PhotoKind: String { case avant, apres }
 /// Structure sur disque :
 ///   Clients/<id>.json     — une cliente + toutes ses transactions
 ///   Catalog.json           — les 4 catalogues
-///   PendingPhotos/…         — photos prises hors ligne, pas encore envoyées sur Drive
-///   PhotoCache/…            — copie temporaire (purgeable par iOS) des photos déjà sur Drive,
-///                             pour ne pas les retélécharger à chaque affichage
+///   PendingPhotos/…         — photos pas encore envoyées sur Drive (effacées une fois
+///                             envoyées : les photos ne restent pas sur le téléphone)
 final class FileStore {
     private let fm = FileManager.default
 
@@ -22,16 +26,14 @@ final class FileStore {
         return url
     }
 
-    private func dir(_ name: String, in base: FileManager.SearchPathDirectory = .documentDirectory) -> URL {
-        let parent = base == .cachesDirectory ? fm.urls(for: .cachesDirectory, in: .userDomainMask)[0] : root()
-        let url = parent.appendingPathComponent(name, isDirectory: true)
+    private func dir(_ name: String) -> URL {
+        let url = root().appendingPathComponent(name, isDirectory: true)
         try? fm.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
 
     private var clientsDir: URL { dir("Clients") }
     private var pendingPhotosDir: URL { dir("PendingPhotos") }
-    private var photoCacheDir: URL { dir("SuiviClientPhotoCache", in: .cachesDirectory) }
     private var catalogURL: URL { root().appendingPathComponent("Catalog.json") }
     private var pendingDeletesURL: URL { root().appendingPathComponent("PendingDeletes.json") }
 
@@ -123,13 +125,10 @@ final class FileStore {
         try? fm.removeItem(at: pendingPhotosDir.appendingPathComponent(name))
     }
 
-    // MARK: - Cache local des photos déjà sur Drive (juste pour l'affichage)
-
-    func cachedPhotoData(name: String) -> Data? {
-        try? Data(contentsOf: photoCacheDir.appendingPathComponent(name))
-    }
-
-    func cachePhotoData(_ data: Data, name: String) {
-        try? data.write(to: photoCacheDir.appendingPathComponent(name), options: .atomic)
+    /// Les anciennes versions de l'app gardaient une copie des photos téléchargées : on
+    /// l'efface, les photos ne sont plus stockées sur le téléphone.
+    func removeLegacyPhotoCache() {
+        let caches = fm.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        try? fm.removeItem(at: caches.appendingPathComponent("SuiviClientPhotoCache", isDirectory: true))
     }
 }

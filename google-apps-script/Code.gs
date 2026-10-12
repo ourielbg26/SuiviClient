@@ -210,13 +210,9 @@ function pull() {
   var index = loadIndex();
   var clients = Object.keys(index).map(function (id) { return index[id]; });
   var catalog = readJSON(rootFolder(), 'Catalog.json') || { reparation: [], couleur: [], typeCouleur: [], produit: [], version: 0 };
-  var photoNames = [];
-  var pf = photosFolder().getFiles();
-  while (pf.hasNext()) {
-    var p = pf.next();
-    if (!p.isTrashed()) photoNames.push(p.getName());
-  }
-  return { clients: clients, catalog: catalog, photoNames: photoNames };
+  // Chaque fiche liste elle-même ses photos (`photos`) : plus besoin de parcourir le
+  // dossier Photos. `photoNames` reste, vide, pour les anciennes versions de l'app.
+  return { clients: clients, catalog: catalog, photoNames: [] };
 }
 
 function pushClient(client) {
@@ -272,4 +268,110 @@ function deletePhotos(transactionId) {
     }
   }
   return { ok: true };
+}
+
+// ───────────────────────────── Liste de secours ─────────────────────────────
+//
+// Un Google Sheets "Liste de secours" (dans le dossier Drive de l'app) avec toutes les
+// fiches, lisible sans l'app. Mis à jour chaque nuit : un onglet par jour, les plus
+// récents en premier, les BACKUP_DAYS_KEPT derniers jours gardés — si les données de
+// l'app s'abîment un jour, les listes des jours précédents restent intactes.
+//
+// Mise en route, une seule fois : dans l'éditeur, choisir `installerListeDeSecours` dans
+// la liste des fonctions en haut, puis cliquer sur ▶ Exécuter (et autoriser).
+
+var BACKUP_SHEET_NAME = 'Liste de secours';
+var BACKUP_DAYS_KEPT = 14;
+
+function installerListeDeSecours() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'mettreAJourListeDeSecours') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('mettreAJourListeDeSecours').timeBased().everyDays(1).atHour(3).create();
+  mettreAJourListeDeSecours();
+}
+
+function mettreAJourListeDeSecours() {
+  var index = loadIndex();
+  var headers = ['Fiche nº', 'Cliente', 'Téléphone', 'Catégorie', 'Article', 'Prix', 'Acompte',
+    'Paiement', 'Moyen de paiement', 'Statut', 'Dépôt', 'Rendu le', 'Retour le', 'Récupéré après retour',
+    'Note', 'Photos'];
+  var rows = [];
+  Object.keys(index).forEach(function (id) {
+    var c = index[id];
+    (c.transactions || []).forEach(function (t) {
+      rows.push([
+        ficheNumber(t.ref), c.name || '', c.phone || '', t.category || '', t.item || '',
+        Number(t.price) || 0, depositAmount(t), paymentLabel(t), t.method || '', t.status || '',
+        sheetDate(t.dropDate), sheetDate(t.pickupDate), sheetDate(t.returnDate),
+        sheetDate(t.pickup2Date), t.note || '', (t.photos || []).length
+      ]);
+    });
+  });
+  rows.sort(function (a, b) { return a[0] - b[0]; });
+
+  var ss = backupSpreadsheet();
+  var tabName = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName, 0);
+  sheet.clear();
+  var all = [headers].concat(rows);
+  sheet.getRange(1, 1, all.length, headers.length).setValues(all);
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  sheet.setFrozenRows(1);
+  if (rows.length) {
+    sheet.getRange(2, 11, rows.length, 4).setNumberFormat('dd/MM/yyyy');
+    sheet.getRange(2, 6, rows.length, 2).setNumberFormat('#,##0 "₪"');
+  }
+  sheet.autoResizeColumns(1, headers.length);
+
+  // Onglets en trop : la feuille vide créée avec le fichier, et les jours les plus anciens.
+  var dated = ss.getSheets().filter(function (s) { return /^\d{4}-\d{2}-\d{2}$/.test(s.getName()); });
+  ss.getSheets().forEach(function (s) {
+    if (dated.indexOf(s) === -1 && ss.getSheets().length > 1) ss.deleteSheet(s);
+  });
+  dated.sort(function (a, b) { return a.getName() < b.getName() ? 1 : -1; });
+  dated.slice(BACKUP_DAYS_KEPT).forEach(function (s) { ss.deleteSheet(s); });
+}
+
+function backupSpreadsheet() {
+  var key = 'sheet:' + BACKUP_SHEET_NAME;
+  var id = PROPS.getProperty(key);
+  if (id) {
+    try {
+      if (!DriveApp.getFileById(id).isTrashed()) return SpreadsheetApp.openById(id);
+    } catch (err) {}
+  }
+  var ss = SpreadsheetApp.create(BACKUP_SHEET_NAME);
+  DriveApp.getFileById(ss.getId()).moveTo(rootFolder());
+  PROPS.setProperty(key, ss.getId());
+  return ss;
+}
+
+function ficheNumber(ref) {
+  var n = parseInt(String(ref || '').replace(/\D/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+// Même règle que l'app (`AppTransaction.depositAmount`).
+function depositAmount(t) {
+  if (t.category !== 'Vente') return '';
+  if (t.deposit != null) return Number(t.deposit);
+  return t.plan ? Number(t.plan.paid) : '';
+}
+
+function sheetDate(iso) { return iso ? new Date(iso) : ''; }
+
+function paymentLabel(t) {
+  if (t.isPaid) return 'Payé';
+  if (t.plan) {
+    var tz = Session.getScriptTimeZone();
+    var due = Utilities.formatDate(new Date(t.plan.due), tz, 'dd/MM/yyyy');
+    var received = (t.plan.received || []).reduce(function (sum, r) { return sum + Number(r.amount); }, Number(t.plan.paid));
+    if (t.plan.count) {
+      return 'Échelonné (' + t.plan.method + ') — ' + t.plan.count + ' mensualités à partir du ' + due +
+        ', ' + received + ' ₪ reçus sur ' + t.price + ' ₪';
+    }
+    return 'Échelonné — ' + received + ' ₪ payés, reste dû le ' + due;
+  }
+  return 'Non payé';
 }

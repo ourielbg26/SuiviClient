@@ -48,7 +48,7 @@ struct StatsView: View {
 
     private var scopeTotal: Decimal { sum(scope) }
     private var scopePaid: Decimal { sum(scope.filter(\.isPaid)) }
-    private var scopePlanPaid: Decimal { scope.filter { $0.plan != nil && !$0.isPaid }.reduce(0) { $0 + ($1.plan?.paid ?? 0) } }
+    private var scopePlanPaid: Decimal { scope.filter { $0.plan != nil && !$0.isPaid }.reduce(0) { $0 + ($1.planReceived ?? 0) } }
     private var encaisse: Decimal { scopePaid + scopePlanPaid }
     private var enAttente: Decimal { scopeTotal - encaisse }
     private var moyen: Decimal { scope.isEmpty ? 0 : scopeTotal / Decimal(scope.count) }
@@ -58,7 +58,7 @@ struct StatsView: View {
     }
 
     private var slices: [Slice] {
-        Category.allCases.map { cat in
+        Category.selectable.map { cat in
             let amt = sum(scope.filter { $0.category == cat })
             let pct = scopeTotal > 0 ? (Double(truncating: amt as NSNumber) / Double(truncating: scopeTotal as NSNumber)) * 100 : 0
             return Slice(category: cat, amount: amt, pct: pct)
@@ -129,7 +129,7 @@ struct StatsView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Statistiques").font(AppFont.playfair(22, weight: .bold)).tracking(AppTracking.screenTitle)
+                Text("Statistiques").font(AppFont.display(22, weight: .semibold)).tracking(AppTracking.screenTitle).textCase(.uppercase)
                 Spacer()
             }
             .padding(.horizontal, Theme.Spacing.contentMargin)
@@ -156,7 +156,7 @@ struct StatsView: View {
                             }
                         }
                         .padding(12)
-                        .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(.white))
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(Theme.Colors.card))
                         .overlay(RoundedRectangle(cornerRadius: Theme.Radius.button).strokeBorder(Theme.Colors.border, lineWidth: 1))
                     }
 
@@ -168,7 +168,7 @@ struct StatsView: View {
                 .screenBottomPadding()
             }
         }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
     }
 
@@ -177,7 +177,7 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text("\(periodLabel) · encaissé").font(AppFont.montserrat(13, weight: .medium)).foregroundStyle(.white)
                 Text(Formatters.money(encaisse))
-                    .font(AppFont.playfair(44, weight: .bold))
+                    .font(AppFont.display(44, weight: .bold))
                     .tracking(AppTracking.bigNumber)
                     .foregroundStyle(.white)
             }
@@ -195,7 +195,7 @@ struct StatsView: View {
     private func statTile(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label).font(AppFont.montserrat(11, weight: .medium)).foregroundStyle(.white)
-            Text(value).font(AppFont.playfair(18, weight: .bold)).foregroundStyle(.white)
+            Text(value).font(AppFont.display(18, weight: .bold)).foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 13)
@@ -217,7 +217,7 @@ struct StatsView: View {
 
                     VStack(spacing: 1) {
                         Text(Formatters.money(scopeTotal))
-                            .font(AppFont.playfair(18, weight: .bold))
+                            .font(AppFont.display(18, weight: .bold))
                             .tracking(-0.3)
                         Text("facturé").font(AppFont.montserrat(10)).foregroundStyle(Theme.Colors.textSecondary)
                     }
@@ -248,13 +248,13 @@ struct StatsView: View {
             }
         }
         .padding(20)
-        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
         .cardShadow()
     }
 
     private var rankingCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Classement").font(AppFont.montserrat(15, weight: .semibold))
+            Text("Classement").font(AppFont.display(16, weight: .semibold))
             FlowLayout(spacing: 7) {
                 ForEach(RankSet.allCases, id: \.self) { r in
                     ChipButton(label: r.rawValue, isActive: rankSet == r) { rankSet = r }
@@ -293,7 +293,7 @@ struct StatsView: View {
             }
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
         .cardShadow()
     }
 

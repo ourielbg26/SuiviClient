@@ -83,8 +83,9 @@ private struct SplashView: View {
             Theme.Colors.background.ignoresSafeArea()
             VStack(spacing: 18) {
                 Text("Suivi Client")
-                    .font(AppFont.playfair(34))
-                    .tracking(AppTracking.screenTitle)
+                    .font(AppFont.display(30, weight: .regular))
+                    .tracking(AppTracking.screenTitle * 1.6)
+                    .textCase(.uppercase)
                     .foregroundStyle(Theme.Colors.textPrimary)
                 ProgressView()
                     .tint(Theme.Colors.primaryButton)

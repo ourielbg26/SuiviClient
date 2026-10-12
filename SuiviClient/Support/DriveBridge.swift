@@ -12,7 +12,6 @@ enum DriveBridge {
     struct PullResult: Decodable {
         var clients: [Client]
         var catalog: CatalogData
-        var photoNames: [String]
     }
 
     private static var baseURL: URL? { DriveConfig.isConfigured ? URL(string: DriveConfig.webAppURL) : nil }
@@ -80,8 +79,12 @@ enum DriveBridge {
         _ = try await post(action: "uploadPhoto", bodyData: try JSONSerialization.data(withJSONObject: payload))
     }
 
+    /// Quand la photo n'est pas (encore) sur Drive, le script répond par un message
+    /// d'erreur au lieu de l'image : on ne garde que ce qui commence comme un JPEG.
     static func downloadPhoto(name: String) async throws -> Data {
-        try await get(action: "downloadPhoto", extra: [URLQueryItem(name: "name", value: name)])
+        let data = try await get(action: "downloadPhoto", extra: [URLQueryItem(name: "name", value: name)])
+        guard data.starts(with: [0xFF, 0xD8]) else { throw DriveError.badResponse }
+        return data
     }
 
     static func deletePhotos(transactionID: UUID) async throws {

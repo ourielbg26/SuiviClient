@@ -48,10 +48,12 @@ Il n'y a plus de base SwiftData : chaque cliente est un fichier JSON séparé (a
 ses transactions dedans), plus un fichier pour les 4 catalogues. Toujours gardés **en
 local** sur le téléphone (l'app marche sans réseau), et copiés sur **Google Drive** dès
 que le réseau est là — synchronisés automatiquement au lancement de l'app, sans aucun
-réglage à faire sur les iPhone. Les **photos vivent uniquement sur Drive** (pas de copie
-locale une fois envoyées) ; si une photo est prise hors ligne, elle patiente sur le
-téléphone jusqu'au prochain lancement avec réseau, puis part sur Drive et s'efface du
-téléphone.
+réglage à faire sur les iPhone. Les **photos vivent uniquement sur Drive** : rien n'est
+gardé sur le téléphone une fois envoyées. Chaque fiche enregistre seulement le nom de ses
+photos, et elles ne se téléchargent qu'à l'ouverture de la fiche (une vignette en échec
+propose « Réessayer »). Une photo prise hors ligne patiente sur le téléphone, avec le
+badge « Pas encore envoyée », jusqu'à la prochaine synchro avec réseau, puis part sur
+Drive et s'efface du téléphone.
 
 Ce lien Drive passe par un petit script (voir `google-apps-script/`) — **il reste à le
 déployer** : suis `google-apps-script/LISEZ-MOI.md` et envoie-moi l'URL obtenue à la fin,

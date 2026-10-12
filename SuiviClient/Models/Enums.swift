@@ -10,6 +10,14 @@ enum Category: String, CaseIterable, Codable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Catégories proposées pour une nouvelle fiche et dans les filtres. "Coupe" n'en fait
+    /// plus partie (les coupes sont des réparations) ; le cas reste pour pouvoir relire
+    /// une éventuelle ancienne fiche.
+    static let selectable: [Category] = [.vente, .reparation, .couleur, .lavage, .produit]
+
+    /// Pas de paiement en plusieurs fois pour un produit ou un lavage.
+    var allowsInstallments: Bool { self != .produit && self != .lavage }
+
     var lineColor: Color {
         switch self {
         case .vente: return Theme.Colors.venteLine
@@ -94,8 +102,18 @@ enum PayMethod: String, CaseIterable, Codable, Identifiable {
     case especes = "Espèces"
     case carte = "Carte"
     case cheque = "Chèque"
+    case bit = "Bit"
+    case revolut = "Revolut"
 
     var id: String { rawValue }
+
+    /// Moyens proposés pour un paiement en une fois. Le chèque n'est plus proposé (le cas
+    /// reste pour les anciennes fiches réglées par chèque).
+    static let choices: [PayMethod] = [.especes, .carte, .bit, .revolut]
+    /// Moyens proposés pour un paiement en plusieurs fois.
+    static let installmentChoices: [PayMethod] = [.especes, .carte]
+
+    var label: String { self == .carte ? "Carte bleue" : rawValue }
 }
 
 enum Origine: String, Codable, CaseIterable, Identifiable {
@@ -122,8 +140,8 @@ enum CatalogType: String, CaseIterable, Codable, Identifiable {
     var title: String {
         switch self {
         case .reparation: return "Types de réparation"
-        case .couleur: return "Couleurs"
-        case .typeCouleur: return "Types de coloration"
+        case .couleur: return "Teintes"
+        case .typeCouleur: return "Colorimétrie"
         case .produit: return "Produits à vendre"
         }
     }
@@ -131,8 +149,8 @@ enum CatalogType: String, CaseIterable, Codable, Identifiable {
     var tabLabel: String {
         switch self {
         case .reparation: return "Réparations"
-        case .couleur: return "Couleurs"
-        case .typeCouleur: return "Types couleur"
+        case .couleur: return "Teintes"
+        case .typeCouleur: return "Colorimétrie"
         case .produit: return "Produits"
         }
     }
@@ -140,7 +158,7 @@ enum CatalogType: String, CaseIterable, Codable, Identifiable {
     var entryPlaceholder: String {
         switch self {
         case .reparation: return "Nouveau type"
-        case .couleur: return "Nouvelle couleur"
+        case .couleur: return "Nouvelle teinte"
         case .typeCouleur: return "Racine, balayage…"
         case .produit: return "Nouveau produit"
         }
@@ -155,9 +173,29 @@ enum CatalogType: String, CaseIterable, Codable, Identifiable {
     }
 }
 
-/// Paiement en plusieurs fois — espèces ou chèque uniquement.
+/// Paiement en plusieurs fois (espèces, chèque ou carte).
+/// - Chèque / carte : les mensualités tombent toutes seules ; la fiche reste "en cours de
+///   paiement" jusqu'à la date de la dernière, puis passe en payé
+///   (`DataStore.settleFinishedInstallments`).
+/// - Espèces : chaque paiement reçu est noté dans `received` ; la fiche passe en "non
+///   payé" dès qu'une mensualité passée n'est pas couverte, et en payé quand tout est reçu.
 struct Installments: Codable, Hashable {
+    /// Versé à la création (acompte).
     var paid: Decimal
+    /// Date de la 1ʳᵉ mensualité — les suivantes tombent le même jour des mois suivants.
+    /// Pour les échéanciers créés avant les mensualités (`count` nil) : simple date de la
+    /// prochaine échéance.
     var due: Date
     var method: PayMethod
+    /// Nombre de mensualités — nil pour les échéanciers créés avant ce champ.
+    var count: Int?
+    /// Espèces : paiements reçus après la création, dans l'ordre où ils ont été notés.
+    var received: [InstallmentReceipt]?
+}
+
+/// Un paiement en espèces reçu pendant un échelonnement.
+struct InstallmentReceipt: Codable, Hashable, Identifiable {
+    var id = UUID()
+    var date: Date
+    var amount: Decimal
 }

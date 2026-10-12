@@ -12,8 +12,8 @@ struct TransactionFormDraft {
 
     // Réparation — multi-sélection
     var reparations: [String] = []
-    // Coupe
-    var coupe: String = FixedOptions.coupes[0]
+    /// Combien de fois pour les réparations à l'unité (ex. "Ajout ligne" × 3).
+    var reparationQuantities: [String: Int] = [:]
     // Couleur
     var typeCouleur: String = ""
     var couleur: String = ""
@@ -23,7 +23,7 @@ struct TransactionFormDraft {
     var origine: Origine = .stock
     var taille: String = "M"
     var texture: String = "Ondulé"
-    var longueur: String = "40-45"
+    var longueur: String = "40"
     // Lavage
     var lavage: String = FixedOptions.lavageOptions[0]
     var finition: String = FixedOptions.finitions[0]
@@ -43,10 +43,13 @@ struct TransactionFormDraft {
     var planPaid: String = ""
     var planDue: Date = .now
     var planMethod: PayMethod = .especes
+    /// Nombre de mensualités (paiement en plusieurs fois).
+    var planCount: String = ""
 
-    /// Vente uniquement : montant déjà reçu. Remplace le choix Pas encore/Payé/En
-    /// plusieurs fois — le statut de paiement se déduit de ce montant vs le prix.
+    /// Vente uniquement : acompte versé à la commande (gardé même une fois tout payé).
     var venteAcompte: String = ""
+    /// Vente uniquement : le reste a été réglé. Sans objet si l'acompte couvre le prix.
+    var venteSoldePaye = false
 
     enum PayChoice: String, CaseIterable, Identifiable {
         case pasEncore = "Pas encore"
@@ -67,9 +70,13 @@ struct TransactionFormDraft {
             let base = bits.isEmpty ? "Vente" : bits.joined(separator: " · ")
             return origine == .commande ? base + " · Commande" : base
         case .reparation:
-            return reparations.isEmpty ? "Réparation" : reparations.joined(separator: " + ")
+            guard !reparations.isEmpty else { return "Réparation" }
+            return reparations.map { name in
+                let qty = reparationQuantities[name] ?? 1
+                return qty > 1 ? "\(name) ×\(qty)" : name
+            }.joined(separator: " + ")
         case .coupe:
-            return coupe
+            return "Coupe"
         case .couleur:
             let bits = [typeCouleur, couleur].filter { !$0.isEmpty }
             return bits.isEmpty ? "Couleur" : bits.joined(separator: " · ")
@@ -84,6 +91,16 @@ struct TransactionFormDraft {
     var priceValue: Decimal {
         let normalized = price.replacingOccurrences(of: ",", with: ".")
         return Decimal(string: normalized, locale: Locale(identifier: "en_US")) ?? 0
+    }
+
+    /// Moyen de paiement enregistré : pour une vente, celui choisi avec les mensualités
+    /// (la vente n'a plus de choix "Réglé en" séparé).
+    var paymentMethod: PayMethod { category == .vente ? planMethod : method }
+
+    /// Nombre de mensualités saisi — nil si vide ou invalide.
+    var planCountValue: Int? {
+        guard let n = Int(planCount.trimmingCharacters(in: .whitespaces)), n > 0 else { return nil }
+        return n
     }
 
     /// Acompte saisi (Vente), converti en Decimal (0 si invalide).
@@ -131,17 +148,30 @@ struct TransactionFormDraft {
             f.planPaid = "\(plan.paid)"
             f.planDue = plan.due
             f.planMethod = plan.method
-            if t.category == .vente { f.venteAcompte = "\(plan.paid)" }
-        } else if t.category == .vente, t.isPaid {
-            f.venteAcompte = "\(t.price)"
+            f.planCount = plan.count.map(String.init) ?? ""
+        }
+        if t.category == .vente {
+            f.planMethod = t.plan?.method ?? (PayMethod.installmentChoices.contains(t.method) ? t.method : .especes)
+            f.venteAcompte = t.depositAmount.map { "\($0)" } ?? ""
+            f.venteSoldePaye = t.isPaid
         }
 
         let parts = t.item.components(separatedBy: " · ")
         switch t.category {
         case .reparation:
-            f.reparations = t.item.components(separatedBy: " + ")
+            for part in t.item.components(separatedBy: " + ") {
+                let bits = part.components(separatedBy: " ×")
+                if bits.count == 2, let qty = Int(bits[1]) {
+                    f.reparations.append(bits[0])
+                    f.reparationQuantities[bits[0]] = qty
+                } else {
+                    f.reparations.append(part)
+                }
+            }
         case .coupe:
-            f.coupe = t.item
+            // Ancienne fiche "Coupe" : se modifie comme une réparation.
+            f.category = .reparation
+            f.reparations = [t.item]
         case .couleur:
             f.typeCouleur = parts.first ?? ""
             f.couleur = parts.count > 1 ? parts[1] : ""
@@ -151,9 +181,15 @@ struct TransactionFormDraft {
             f.lavage = t.item.contains("coiffage") ? "Lavage + coiffage" : "Lavage seul"
             f.finition = parts.count > 1 ? parts[1] : FixedOptions.finitions[0]
         case .vente:
-            let textureLongueur = (parts.first ?? "").components(separatedBy: " ")
-            f.texture = textureLongueur.first ?? FixedOptions.textures[1]
-            f.longueur = textureLongueur.count > 1 ? textureLongueur[1] : "40-45"
+            // "Raide haut, ondulé bas 60" : la longueur est le dernier mot, la texture le reste.
+            var words = (parts.first ?? "").components(separatedBy: " ")
+            if let last = words.last, Int(last) != nil {
+                f.longueur = last
+                words.removeLast()
+            } else {
+                f.longueur = ""
+            }
+            f.texture = words.joined(separator: " ")
             f.couleur = parts.count > 1 ? parts[1] : ""
             f.taille = parts.count > 2 ? parts[2].replacingOccurrences(of: "Bonnet ", with: "") : "M"
             f.origine = t.origine ?? (t.item.contains("Commande") ? .commande : .stock)

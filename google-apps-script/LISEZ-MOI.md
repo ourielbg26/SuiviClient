@@ -66,3 +66,15 @@ automatiquement dans ce dossier Drive — sans aucun réglage à faire sur les t
 Reviens dans script.google.com, change `FOLDER_ID` dans le code, sauvegarde, puis
 **Déployer → Gérer les déploiements → ✏️ (modifier) → Déployer** pour republier sur la
 même URL (pas besoin de m'en redonner une nouvelle).
+
+## Liste de secours (Google Sheets)
+
+Le script tient à jour, chaque nuit vers 3 h, un Google Sheets **« Liste de secours »**
+dans le dossier Drive de l'app : toutes les fiches (cliente, téléphone, article, prix,
+paiement, statut, dates, note), lisibles sans l'app. Un onglet par jour, le plus récent
+en premier ; les 14 derniers jours sont gardés.
+
+À activer une seule fois : dans script.google.com, ouvre le projet, choisis
+**`installerListeDeSecours`** dans la liste des fonctions en haut (à côté de ▶ Exécuter),
+clique sur **▶ Exécuter**, puis autorise l'accès à Google Sheets. La liste du jour est
+créée tout de suite ; les suivantes se font seules.

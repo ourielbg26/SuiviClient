@@ -10,17 +10,17 @@ struct BackButton: View {
             if let action { action() } else { dismiss() }
         } label: {
             Image(systemName: "chevron.left")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .light))
                 .foregroundStyle(Theme.Colors.textPrimary)
                 .frame(width: 36, height: 36)
-                .background(RoundedRectangle(cornerRadius: Theme.Radius.backButton).fill(.white))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.backButton).fill(Theme.Colors.card))
                 .overlay(RoundedRectangle(cornerRadius: Theme.Radius.backButton).strokeBorder(Theme.Colors.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
 }
 
-/// En-tête standard : retour + titre Playfair + accessoire optionnel à droite.
+/// En-tête standard : retour + titre serif en capitales espacées + accessoire à droite.
 struct ScreenHeader<Trailing: View>: View {
     let title: String
     var showBack: Bool = true
@@ -30,8 +30,11 @@ struct ScreenHeader<Trailing: View>: View {
         HStack(spacing: 10) {
             if showBack { BackButton() }
             Text(title)
-                .font(AppFont.playfair(20, weight: .bold))
-                .tracking(AppTracking.screenTitle)
+                .font(AppFont.display(18, weight: .semibold))
+                .tracking(AppTracking.screenTitle * 0.8)
+                .textCase(.uppercase)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             Spacer()
             trailing()
         }

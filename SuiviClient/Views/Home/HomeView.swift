@@ -8,16 +8,20 @@ struct HomeView: View {
     private var allEntries: [TransactionEntry] { store.allEntries.sorted { $0.dropDate < $1.dropDate } }
     private var enCours: [TransactionEntry] { allEntries.filter { $0.status == .enCours } }
     private var pret: [TransactionEntry] { allEntries.filter { $0.status == .pret || $0.status == .retour } }
-    private var impaye: [TransactionEntry] { allEntries.filter { $0.status == .rendu && !$0.isPaid && $0.plan == nil } }
-    private var echelonne: [TransactionEntry] { allEntries.filter { $0.plan != nil && !$0.isPaid } }
+    /// Rendu sans être payé, ou paiement en espèces avec une mensualité en retard.
+    private var impaye: [TransactionEntry] {
+        allEntries.filter { $0.plan == nil ? ($0.status == .rendu && !$0.isPaid) : $0.payState == .impaye }
+    }
+    private var echelonne: [TransactionEntry] { allEntries.filter { $0.plan != nil && $0.payState == .echelonne } }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text("Atelier")
-                        .font(AppFont.playfair(24, weight: .bold))
-                        .tracking(AppTracking.clientName)
+                        .font(AppFont.display(24, weight: .semibold))
+                        .tracking(AppTracking.screenTitle)
+                        .textCase(.uppercase)
                     Spacer()
                     CapsuleActionButton(title: "Nouvelle fiche", systemImage: "plus") {
                         path.append(.newTransactionForm(prefillName: "", prefillPhone: ""))
@@ -27,7 +31,7 @@ struct HomeView: View {
                 section(key: "enCours", title: "En cours", dot: Theme.Colors.statusEnCoursDot, items: enCours,
                         emptyLabel: "Rien en atelier.") { t in
                     let d = t.ageDays
-                    return ("Déposé le \(Formatters.shortDate(t.dropDate)) · \(d) j", d > 14 ? Theme.Colors.unpaidText : Theme.Colors.textSecondary, false)
+                    return ("\(t.category == .vente ? "Commandé" : "Déposé") le \(Formatters.shortDate(t.dropDate)) · \(d) j", d > 14 ? Theme.Colors.unpaidText : Theme.Colors.textSecondary, false)
                 }
 
                 section(key: "pret", title: "Prêt à rendre", dot: Theme.Colors.statusPretDot, items: pret,
@@ -35,11 +39,15 @@ struct HomeView: View {
                     if t.status == .retour, let r = t.returnDate {
                         return ("Retour reçu le \(Formatters.shortDate(r))", Theme.Colors.unpaidText, false)
                     }
-                    return ("Prêt · déposé le \(Formatters.shortDate(t.dropDate))", Theme.Colors.statusPretText, false)
+                    return ("Prêt · \(t.category == .vente ? "commandé" : "déposé") le \(Formatters.shortDate(t.dropDate))", Theme.Colors.statusPretText, false)
                 }
 
                 section(key: "impaye", title: "Non payé", dot: Theme.Colors.statusRetourDot, items: impaye,
                         emptyLabel: "Tout est réglé.") { t in
+                    if t.plan != nil, let left = t.planLeft {
+                        let since = t.nextInstallmentDate.map { " depuis le \(Formatters.shortDate($0))" } ?? ""
+                        return ("Mensualité en retard\(since) · reste \(Formatters.money(left))", Theme.Colors.unpaidText, true)
+                    }
                     let label = t.pickupDate.map { "Rendu le \(Formatters.shortDate($0))" } ?? "Rendu"
                     return (label, Theme.Colors.unpaidText, false)
                 }
@@ -48,7 +56,8 @@ struct HomeView: View {
                         emptyLabel: "Aucun paiement échelonné.") { t in
                     guard let plan = t.plan, let left = t.planLeft else { return ("", Theme.Colors.textSecondary, false) }
                     let late = t.planIsLate
-                    let text = "Reste \(Formatters.money(left)) · \(plan.method.rawValue.lowercased()) · \(Formatters.shortDate(plan.due))"
+                    let next = t.nextInstallmentDate.map { " · \(Formatters.shortDate($0))" } ?? ""
+                    let text = "Reste \(Formatters.money(left)) · \(plan.method.rawValue.lowercased())\(next)"
                     return (text, late ? Theme.Colors.unpaidText : Theme.Colors.installmentText, late)
                 }
 
@@ -66,7 +75,7 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, 18)
                     .padding(.vertical, 15)
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(Theme.Colors.card))
                     .overlay(RoundedRectangle(cornerRadius: Theme.Radius.button).strokeBorder(Theme.Colors.border, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
@@ -76,7 +85,7 @@ struct HomeView: View {
             .screenBottomPadding()
         }
         .refreshable { await store.sync() }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
     }
 
@@ -90,7 +99,7 @@ struct HomeView: View {
             HStack(spacing: 9) {
                 Circle().fill(dot).frame(width: 9, height: 9)
                 Text(title)
-                    .font(AppFont.montserrat(16, weight: .semibold))
+                    .font(AppFont.display(17, weight: .semibold))
                 Spacer()
                 if !items.isEmpty {
                     Text("\(items.count)")
@@ -133,7 +142,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
             .cardShadow()
         }
     }

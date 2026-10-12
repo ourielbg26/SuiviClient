@@ -34,7 +34,7 @@ struct NewContactView: View {
                         }
                     }
                     .padding(18)
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
 
                     VStack(spacing: 7) {
@@ -51,7 +51,7 @@ struct NewContactView: View {
                 .screenBottomPadding()
             }
         }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
     }
 }

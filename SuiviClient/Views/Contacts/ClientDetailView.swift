@@ -35,7 +35,7 @@ struct ClientDetailView: View {
                             RoundAvatar(initials: client.initials, bg: colors.bg, fg: colors.fg, size: 56)
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(client.name)
-                                    .font(AppFont.playfair(22, weight: .bold))
+                                    .font(AppFont.display(22, weight: .bold))
                                     .tracking(AppTracking.clientName)
                                 Text(client.phone)
                                     .font(AppFont.montserrat(13))
@@ -49,11 +49,11 @@ struct ClientDetailView: View {
                         }
                     }
                     .padding(20)
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
 
                     HStack(alignment: .lastTextBaseline) {
-                        Text("Historique").font(AppFont.montserrat(15, weight: .semibold))
+                        Text("Historique").font(AppFont.display(16, weight: .semibold))
                         Spacer()
                         Text(client.unpaidTotal > 0 ? "\(Formatters.money(client.unpaidTotal)) en attente" : "Tout est payé")
                             .font(AppFont.montserrat(12))
@@ -78,7 +78,7 @@ struct ClientDetailView: View {
                             }
                         }
                     }
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
 
                     NavigationLink(value: AppRoute.newTransactionForm(prefillName: client.name == "—" ? "" : client.name, prefillPhone: client.phone == "—" ? "" : client.phone)) {
@@ -99,7 +99,7 @@ struct ClientDetailView: View {
                 .screenBottomPadding()
             }
         }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
     }
 

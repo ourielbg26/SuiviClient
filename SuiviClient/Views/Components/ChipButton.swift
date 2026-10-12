@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Chip capsule générique (filtres, catégories, statuts, options…).
-/// Actif : fond `#B88AA2` / texte blanc. Inactif : fond `#FAF7F5` / texte `#6E5F5C` / bordure `#E8DADA`.
+/// Actif : fond encre / texte blanc. Inactif : fond crème / texte brun / bordure rose fine.
 struct ChipButton: View {
     let label: String
     let isActive: Bool
@@ -14,7 +14,7 @@ struct ChipButton: View {
                 .padding(.horizontal, 13)
                 .padding(.vertical, 9)
                 .background(
-                    Capsule().fill(isActive ? Theme.Colors.primaryButton : Color(hex: "FAF7F5"))
+                    Capsule().fill(isActive ? Theme.Colors.primaryButton : Theme.Colors.chipInactiveBg)
                 )
                 .overlay(
                     Capsule().strokeBorder(isActive ? Color.clear : Theme.Colors.border, lineWidth: 1)

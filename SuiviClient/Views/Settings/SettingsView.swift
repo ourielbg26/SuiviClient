@@ -7,6 +7,9 @@ struct SettingsView: View {
     @State private var newEntry = ""
     /// Entrée dont on a touché la croix — la suppression attend la confirmation.
     @State private var pendingDelete: CatalogItem?
+    /// Entrée dont on modifie le prix préenregistré.
+    @State private var editingPrice: CatalogItem?
+    @State private var priceText = ""
 
     private var entries: [CatalogItem] { store.catalog[selected] }
 
@@ -16,7 +19,7 @@ struct SettingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Paramètres").font(AppFont.playfair(22, weight: .bold)).tracking(AppTracking.screenTitle)
+                Text("Paramètres").font(AppFont.display(22, weight: .semibold)).tracking(AppTracking.screenTitle).textCase(.uppercase)
                 Text("Les listes proposées quand tu remplis une fiche.")
                     .font(AppFont.montserrat(12))
                     .foregroundStyle(Theme.Colors.textSecondary)
@@ -41,7 +44,7 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(alignment: .lastTextBaseline) {
-                            Text(selected.title).font(AppFont.montserrat(15, weight: .semibold))
+                            Text(selected.title).font(AppFont.display(16, weight: .semibold))
                             Spacer()
                             Text("\(entries.count) entrée\(entries.count > 1 ? "s" : "")")
                                 .font(AppFont.montserrat(12))
@@ -88,6 +91,18 @@ struct SettingsView: View {
                                         }
                                         Spacer()
                                         Button {
+                                            priceText = e.price.map { "\($0)" } ?? ""
+                                            editingPrice = e
+                                        } label: {
+                                            Text(priceLabel(e))
+                                                .font(AppFont.montserrat(12, weight: .semibold))
+                                                .padding(.horizontal, 10)
+                                                .frame(height: 30)
+                                                .background(Capsule().fill(e.price == nil ? Theme.Colors.background : Theme.Colors.accentTint))
+                                                .foregroundStyle(e.price == nil ? Theme.Colors.textSecondary : Theme.Colors.accentText)
+                                        }
+                                        .buttonStyle(.plain)
+                                        Button {
                                             pendingDelete = e
                                         } label: {
                                             Image(systemName: "xmark")
@@ -105,7 +120,7 @@ struct SettingsView: View {
                         }
                     }
                     .padding(18)
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
                 }
                 .padding(.horizontal, Theme.Spacing.contentMargin)
@@ -123,8 +138,21 @@ struct SettingsView: View {
             } message: { item in
                 Text("Elle ne sera plus proposée quand tu remplis une fiche. Les fiches déjà enregistrées ne changent pas.")
             }
+            .alert("Prix de « \(editingPrice?.name ?? "") »", isPresented: Binding(get: { editingPrice != nil }, set: { if !$0 { editingPrice = nil } })) {
+                TextField("Prix en ₪", text: $priceText)
+                    .keyboardType(.numberPad)
+                Button("Enregistrer") {
+                    if let item = editingPrice {
+                        let value = Decimal(string: priceText.trimmingCharacters(in: .whitespaces))
+                        store.setCatalogPrice(type: selected, id: item.id, price: value.flatMap { $0 > 0 ? $0 : nil })
+                    }
+                }
+                Button("Annuler", role: .cancel) {}
+            } message: {
+                Text("Proposé automatiquement dans une nouvelle fiche, et toujours modifiable fiche par fiche. Laisse vide pour ne pas avoir de prix.")
+            }
         }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
     }
 
@@ -132,7 +160,7 @@ struct SettingsView: View {
 
     private var storageCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Sauvegarde").font(AppFont.montserrat(15, weight: .semibold))
+            Text("Sauvegarde").font(AppFont.display(16, weight: .semibold))
             HStack(spacing: 8) {
                 Circle().fill(statusColor).frame(width: 8, height: 8)
                 Text(statusText)
@@ -142,8 +170,13 @@ struct SettingsView: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
         .cardShadow()
+    }
+
+    private func priceLabel(_ item: CatalogItem) -> String {
+        guard let price = item.price else { return "Prix" }
+        return Formatters.money(price) + (item.unit.map { " / \($0)" } ?? "")
     }
 
     private var statusText: String {

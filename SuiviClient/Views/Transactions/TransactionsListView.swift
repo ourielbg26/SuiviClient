@@ -59,7 +59,7 @@ struct TransactionsListView: View {
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.card))
                     .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
 
                     Button {
@@ -117,7 +117,7 @@ struct TransactionsListView: View {
                             }
                         }
                     }
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
                 }
                 .padding(.horizontal, Theme.Spacing.contentMargin)
@@ -125,7 +125,7 @@ struct TransactionsListView: View {
             }
             .refreshable { await store.sync() }
         }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
     }
 
@@ -137,7 +137,7 @@ struct TransactionsListView: View {
             filterGroup("Statut du travail", options: ["Tous"] + WorkStatus.allCases.map(\.rawValue), isActive: { $0 == (fStatus?.rawValue ?? "Tous") }) { label in
                 fStatus = WorkStatus(rawValue: label)
             }
-            filterGroup("Catégorie", options: ["Tous"] + Category.allCases.map(\.rawValue), isActive: { $0 == (fCategory?.rawValue ?? "Tous") }) { label in
+            filterGroup("Catégorie", options: ["Tous"] + Category.selectable.map(\.rawValue), isActive: { $0 == (fCategory?.rawValue ?? "Tous") }) { label in
                 fCategory = Category(rawValue: label)
             }
             filterGroup("Période", options: PeriodFilter.allCases.map(\.rawValue), isActive: { $0 == fPeriod.rawValue }) { label in
@@ -168,7 +168,7 @@ struct TransactionsListView: View {
             .foregroundStyle(Theme.Colors.primaryButtonPressed)
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 22).fill(.white))
+        .background(RoundedRectangle(cornerRadius: 22).fill(Theme.Colors.card))
         .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Theme.Colors.border, lineWidth: 1))
     }
 

@@ -10,9 +10,9 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .home: return "house.fill"
-        case .stats: return "chart.bar.fill"
-        case .contacts: return "person.fill"
+        case .home: return "house"
+        case .stats: return "chart.bar"
+        case .contacts: return "person"
         case .settings: return "slider.horizontal.3"
         }
     }
@@ -36,12 +36,12 @@ struct FloatingTabBar: View {
                                 .fill(active ? Theme.Colors.accentTint : Color.clear)
                                 .frame(width: 34, height: 26)
                             Image(systemName: tab.icon)
-                                .font(.system(size: 16, weight: .regular))
+                                .font(.system(size: 17, weight: active ? .regular : .light))
                         }
                         Text(tab.rawValue)
                             .font(AppFont.montserrat(10, weight: .semibold))
                     }
-                    .foregroundStyle(active ? Theme.Colors.accentText : Theme.Colors.textSecondary)
+                    .foregroundStyle(active ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                 }

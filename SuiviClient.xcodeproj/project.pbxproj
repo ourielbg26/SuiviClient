@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7B3E9A1C5D2F4E6A8B0C1D22 /* CormorantGaramond-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7B3E9A1C5D2F4E6A8B0C1D21 /* CormorantGaramond-Regular.ttf */; };
 		5A1C0E7D3B2F4A6E8C9D0B12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0E7D3B2F4A6E8C9D0B11 /* Assets.xcassets */; };
 		0876826F38AD4764E6BC9A96 /* TransactionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231C2E2AFB97136F2353174F /* TransactionsListView.swift */; };
 		09609D70D22CDF0BE76CD01B /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4834202815837FF5E698C48 /* AppRoute.swift */; };
@@ -15,7 +16,7 @@
 		230AD595BE093E6B12B8E3D6 /* ImageCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F79214DCF0D38F1412D1A56 /* ImageCompressor.swift */; };
 		317979D397139B7149ED319B /* Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B828D023986121FD16D4F3 /* Client.swift */; };
 		3182B097B605893F6FE75247 /* Montserrat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7075439CB4148CE5B9AAE9D4 /* Montserrat-Regular.ttf */; };
-		32CF8CFA607696FA2A4C0F7C /* PlayfairDisplay-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E1F84AD573E35B163C3D1240 /* PlayfairDisplay-SemiBold.ttf */; };
+		32CF8CFA607696FA2A4C0F7C /* CormorantGaramond-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E1F84AD573E35B163C3D1240 /* CormorantGaramond-Medium.ttf */; };
 		3303512922F1E70D431B4B4C /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31161B178AA146608D8866DD /* HomeView.swift */; };
 		37DF36A401EAC64BD16F9529 /* TransactionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726E39E576EECB90134A625A /* TransactionDetailView.swift */; };
 		3887797352FF5D15EE5ADDA2 /* CatalogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12632EFF5D5565321F61B38 /* CatalogEntry.swift */; };
@@ -39,7 +40,7 @@
 		BB6A7BDCC62AD93FF4171456 /* Montserrat-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 648E777181265A65CB64FC39 /* Montserrat-SemiBold.ttf */; };
 		C735AF8FCF419F2DF22CEF7F /* SuggestionField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5373A8F0D3516EC5421CC2A /* SuggestionField.swift */; };
 		CA237283409470BAD3EF5CEB /* ChipButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64F8B568F1C3FC582678ACD1 /* ChipButton.swift */; };
-		CC85E2CE916E6A0CF172E710 /* PlayfairDisplay-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D622C8875A7643477A3BF0E8 /* PlayfairDisplay-Bold.ttf */; };
+		CC85E2CE916E6A0CF172E710 /* CormorantGaramond-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D622C8875A7643477A3BF0E8 /* CormorantGaramond-SemiBold.ttf */; };
 		CCA23B38582D67CC027AEE12 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E8828F1DD81E8250F584884 /* RootView.swift */; };
 		CD5ECD60748BAFCE80C2D4C9 /* ClientDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C668BFBAE21B925E19C88C1 /* ClientDetailView.swift */; };
 		DA29E3EABEAFB9926E48D7BD /* FileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD2D888C9ADAD36DF665E0D2 /* FileStore.swift */; };
@@ -54,6 +55,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7B3E9A1C5D2F4E6A8B0C1D21 /* CormorantGaramond-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "CormorantGaramond-Regular.ttf"; sourceTree = "<group>"; };
 		5A1C0E7D3B2F4A6E8C9D0B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		069909897D5BEE6B4FC798EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		0F01FC6F9279484234423754 /* FloatingTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FloatingTabBar.swift; sourceTree = "<group>"; };
@@ -63,7 +65,7 @@
 		2C668BFBAE21B925E19C88C1 /* ClientDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClientDetailView.swift; sourceTree = "<group>"; };
 		31161B178AA146608D8866DD /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		379ADA3DC4FC61F336B4B288 /* PhotoGrid.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhotoGrid.swift; sourceTree = "<group>"; };
-		450D92216EE79B7028BE88DF /* OFL-PlayfairDisplay.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "OFL-PlayfairDisplay.txt"; sourceTree = "<group>"; };
+		450D92216EE79B7028BE88DF /* OFL-CormorantGaramond.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "OFL-CormorantGaramond.txt"; sourceTree = "<group>"; };
 		56819D68BA2E994F136FECA1 /* Pills.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Pills.swift; sourceTree = "<group>"; };
 		5E8828F1DD81E8250F584884 /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		5EB3A66379C0D12D17FEB9F8 /* NewContactView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NewContactView.swift; sourceTree = "<group>"; };
@@ -94,9 +96,9 @@
 		D0DEBDABAE36EC20725449A5 /* DriveBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DriveBridge.swift; sourceTree = "<group>"; };
 		D4834202815837FF5E698C48 /* AppRoute.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppRoute.swift; sourceTree = "<group>"; };
 		D5B828D023986121FD16D4F3 /* Client.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Client.swift; sourceTree = "<group>"; };
-		D622C8875A7643477A3BF0E8 /* PlayfairDisplay-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "PlayfairDisplay-Bold.ttf"; sourceTree = "<group>"; };
+		D622C8875A7643477A3BF0E8 /* CormorantGaramond-SemiBold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "CormorantGaramond-SemiBold.ttf"; sourceTree = "<group>"; };
 		E12632EFF5D5565321F61B38 /* CatalogEntry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CatalogEntry.swift; sourceTree = "<group>"; };
-		E1F84AD573E35B163C3D1240 /* PlayfairDisplay-SemiBold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "PlayfairDisplay-SemiBold.ttf"; sourceTree = "<group>"; };
+		E1F84AD573E35B163C3D1240 /* CormorantGaramond-Medium.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "CormorantGaramond-Medium.ttf"; sourceTree = "<group>"; };
 		E67FD129CE15D92529DDD7EE /* DataStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
 		E6DCB3D554738D9535F5A631 /* StatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		F4D05828ACC29856BF1EEBFF /* Avatar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Avatar.swift; sourceTree = "<group>"; };
@@ -307,9 +309,10 @@
 				7075439CB4148CE5B9AAE9D4 /* Montserrat-Regular.ttf */,
 				648E777181265A65CB64FC39 /* Montserrat-SemiBold.ttf */,
 				8F266650B36826478236F740 /* OFL-Montserrat.txt */,
-				450D92216EE79B7028BE88DF /* OFL-PlayfairDisplay.txt */,
-				D622C8875A7643477A3BF0E8 /* PlayfairDisplay-Bold.ttf */,
-				E1F84AD573E35B163C3D1240 /* PlayfairDisplay-SemiBold.ttf */,
+				450D92216EE79B7028BE88DF /* OFL-CormorantGaramond.txt */,
+				7B3E9A1C5D2F4E6A8B0C1D21 /* CormorantGaramond-Regular.ttf */,
+				D622C8875A7643477A3BF0E8 /* CormorantGaramond-SemiBold.ttf */,
+				E1F84AD573E35B163C3D1240 /* CormorantGaramond-Medium.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -376,8 +379,9 @@
 				66599ADBF46C173256DFB917 /* Montserrat-Medium.ttf in Resources */,
 				3182B097B605893F6FE75247 /* Montserrat-Regular.ttf in Resources */,
 				BB6A7BDCC62AD93FF4171456 /* Montserrat-SemiBold.ttf in Resources */,
-				CC85E2CE916E6A0CF172E710 /* PlayfairDisplay-Bold.ttf in Resources */,
-				32CF8CFA607696FA2A4C0F7C /* PlayfairDisplay-SemiBold.ttf in Resources */,
+				7B3E9A1C5D2F4E6A8B0C1D22 /* CormorantGaramond-Regular.ttf in Resources */,
+				CC85E2CE916E6A0CF172E710 /* CormorantGaramond-SemiBold.ttf in Resources */,
+				32CF8CFA607696FA2A4C0F7C /* CormorantGaramond-Medium.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -16,12 +16,20 @@ extension Color {
 }
 
 // MARK: - Fonts
-// Embarque Playfair Display (600/700) et Montserrat (400/500/600) — voir Fonts/README.md.
+// Titres : Cormorant Garamond (400/500/600), serif fin proche du « NAOMIE » du logo.
+// Texte : Montserrat (400/500/600). Licences OFL dans Fonts/.
 
 enum AppFont {
-    static func playfair(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-        let name = weight == .semibold ? "PlayfairDisplay-SemiBold" : "PlayfairDisplay-Bold"
-        return .custom(name, size: size)
+    /// Serif des titres et montants. Cormorant dessine plus petit que la plupart des
+    /// polices à taille égale : la taille est agrandie pour garder la même présence.
+    static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        let name: String
+        switch weight {
+        case .bold, .heavy, .black: name = "CormorantGaramond-SemiBold"
+        case .semibold, .medium: name = "CormorantGaramond-Medium"
+        default: name = "CormorantGaramond-Regular"
+        }
+        return .custom(name, size: size * 1.18)
     }
 
     static func montserrat(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
@@ -37,84 +45,91 @@ enum AppFont {
 
 // Tracking (letter-spacing) approximatif des tailles clé, en pt.
 enum AppTracking {
-    static let bigNumber: CGFloat = -1.2   // -.035em @ 44pt
-    static let heroAmount: CGFloat = -1.0  // -.035em @ 38pt
-    static let screenTitle: CGFloat = -0.4 // -.02em @ ~22pt
-    static let clientName: CGFloat = -0.45
+    static let bigNumber: CGFloat = -0.4
+    static let heroAmount: CGFloat = -0.3
+    /// Titres d'écran en capitales espacées, comme « N A O M I E » sur le logo.
+    static let screenTitle: CGFloat = 3
+    static let clientName: CGFloat = 0.2
 }
 
 // MARK: - Design tokens
 
 enum Theme {
+    /// Palette tirée du logo : papier aquarelle rose, encre noire, rose poudré.
     enum Colors {
-        static let background = Color(hex: "FAF7F5")
-        static let card = Color.white
-        static let secondaryBackground = Color(hex: "F7EDEF")
-        static let tabBackground = Color(hex: "F1E6E8")
-        static let pressedSecondary = Color(hex: "EFE0E4")
-        static let separator = Color(hex: "F2E7E9")
-        static let border = Color(hex: "E8DADA")
-        static let dashedBorder = Color(hex: "DFC9D2")
+        static let background = Color(hex: "FBF1EE")
+        /// Lavis plus soutenu du fond aquarelle (`PaperBackground`).
+        static let watercolor = Color(hex: "EFC6BC")
+        static let card = Color(hex: "FFFCFB")
+        static let secondaryBackground = Color(hex: "F7E6E1")
+        static let tabBackground = Color(hex: "F4E1DC")
+        static let pressedSecondary = Color(hex: "F0D8D2")
+        static let separator = Color(hex: "F2E2DE")
+        static let border = Color(hex: "EAD2CC")
+        static let dashedBorder = Color(hex: "D9B6AE")
 
-        static let textPrimary = Color(hex: "3A2E2B")
-        static let textSecondary = Color(hex: "8B7D7A")
-        static let chipInactiveText = Color(hex: "6E5F5C")
+        static let textPrimary = Color(hex: "2B2422")
+        static let textSecondary = Color(hex: "8E7A75")
+        static let chipInactiveText = Color(hex: "6B5A56")
+        static let chipInactiveBg = Color(hex: "FFFCFB")
 
-        static let primaryButton = Color(hex: "B88AA2")
-        static let primaryButtonPressed = Color(hex: "A77791")
-        static let accentTint = Color(hex: "F3E3EA")
-        static let accentTintPressed = Color(hex: "DCB6C8")
-        static let accentText = Color(hex: "8A5F79")
+        /// Encre : boutons principaux et choix actifs, comme le trait du logo.
+        static let primaryButton = Color(hex: "2B2422")
+        /// Rose profond des liens ("Voir tout", "Voir la fiche…").
+        static let primaryButtonPressed = Color(hex: "A8655C")
+        static let accentTint = Color(hex: "F6E0DA")
+        static let accentTintPressed = Color(hex: "E7C2B9")
+        static let accentText = Color(hex: "A2625A")
 
-        static let disabledBg = Color(hex: "EBDDE3")
-        static let disabledText = Color(hex: "8B7D7A")
+        static let disabledBg = Color(hex: "EFDCD7")
+        static let disabledText = Color(hex: "9C8A86")
 
-        static let photoStripeA = Color(hex: "EFE2E5")
-        static let photoStripeB = Color(hex: "FAF5F6")
+        static let photoStripeA = Color(hex: "F4E2DD")
+        static let photoStripeB = Color(hex: "FBF3F1")
 
         // Statut du travail
-        static let statusEnCoursDot = Color(hex: "F0B77E")
-        static let statusEnCoursBg = Color(hex: "FDEFE0")
-        static let statusEnCoursText = Color(hex: "A9702F")
-        static let statusPretDot = Color(hex: "A7C9B4")
-        static let statusPretBg = Color(hex: "E7F1EB")
-        static let statusPretText = Color(hex: "4F7E66")
-        static let statusRenduDot = Color(hex: "D9D9D9")
-        static let statusRenduBg = Color(hex: "EFEFEF")
-        static let statusRenduText = Color(hex: "6B6B6B")
-        static let statusRetourDot = Color(hex: "D67B7B")
-        static let statusRetourBg = Color(hex: "F7E3E3")
-        static let statusRetourText = Color(hex: "A85252")
+        static let statusEnCoursDot = Color(hex: "E9B07C")
+        static let statusEnCoursBg = Color(hex: "FCEEE2")
+        static let statusEnCoursText = Color(hex: "A06B34")
+        static let statusPretDot = Color(hex: "A3C2AE")
+        static let statusPretBg = Color(hex: "E8F0EA")
+        static let statusPretText = Color(hex: "4D7A62")
+        static let statusRenduDot = Color(hex: "D6CCCA")
+        static let statusRenduBg = Color(hex: "F0EBEA")
+        static let statusRenduText = Color(hex: "6E6361")
+        static let statusRetourDot = Color(hex: "D47C78")
+        static let statusRetourBg = Color(hex: "F8E2E0")
+        static let statusRetourText = Color(hex: "A44F4B")
 
         // Paiement
-        static let paidBg = Color(hex: "E4F0EA")
-        static let paidText = Color(hex: "3F7A5F")
-        static let installmentBg = Color(hex: "FAF1DE")
-        static let installmentText = Color(hex: "8A6B24")
-        static let unpaidBg = Color(hex: "F7E3E3")
-        static let unpaidText = Color(hex: "A85252")
-        static let lateAlert = Color(hex: "D67B7B")
-        static let lateAlertText = Color(hex: "8F4444")
+        static let paidBg = Color(hex: "E5EFE8")
+        static let paidText = Color(hex: "3E765C")
+        static let installmentBg = Color(hex: "F9EFDD")
+        static let installmentText = Color(hex: "86682A")
+        static let unpaidBg = Color(hex: "F8E2E0")
+        static let unpaidText = Color(hex: "A44F4B")
+        static let lateAlert = Color(hex: "D47C78")
+        static let lateAlertText = Color(hex: "8C4441")
 
-        // Catégories
-        static let venteLine = Color(hex: "C79BC8")
-        static let venteBg = Color(hex: "F3E6F3")
-        static let venteText = Color(hex: "7E5480")
-        static let reparationLine = Color(hex: "E1A487")
-        static let reparationBg = Color(hex: "FAEAE2")
-        static let reparationText = Color(hex: "9C5F44")
-        static let couleurLine = Color(hex: "C89CB8")
-        static let couleurBg = Color(hex: "F5E7EF")
-        static let couleurText = Color(hex: "8A5F79")
-        static let lavageLine = Color(hex: "9CC9E8")
-        static let lavageBg = Color(hex: "E7F1F9")
-        static let lavageText = Color(hex: "3F6B87")
-        static let produitLine = Color(hex: "B9A7D9")
-        static let produitBg = Color(hex: "EEE9F7")
-        static let produitText = Color(hex: "5F5288")
-        static let coupeLine = Color(hex: "D9B45C")
+        // Catégories — tons poudrés accordés au rose du fond
+        static let venteLine = Color(hex: "BC8DB2")
+        static let venteBg = Color(hex: "F4E6F0")
+        static let venteText = Color(hex: "7A5070")
+        static let reparationLine = Color(hex: "DCA088")
+        static let reparationBg = Color(hex: "FAE8E0")
+        static let reparationText = Color(hex: "985C43")
+        static let couleurLine = Color(hex: "D49A98")
+        static let couleurBg = Color(hex: "F8E5E3")
+        static let couleurText = Color(hex: "975856")
+        static let lavageLine = Color(hex: "9DBBCF")
+        static let lavageBg = Color(hex: "E8F0F5")
+        static let lavageText = Color(hex: "45677C")
+        static let produitLine = Color(hex: "B3A3CF")
+        static let produitBg = Color(hex: "EFEAF6")
+        static let produitText = Color(hex: "5E5385")
+        static let coupeLine = Color(hex: "D6B260")
         static let coupeBg = Color(hex: "F7F0DD")
-        static let coupeText = Color(hex: "8A6D2F")
+        static let coupeText = Color(hex: "86692D")
     }
 
     enum Radius {
@@ -149,25 +164,49 @@ enum Theme {
 
 struct CardShadow: ViewModifier {
     func body(content: Content) -> some View {
-        content.shadow(color: Color(hex: "3A2E2B").opacity(0.06), radius: 1, x: 0, y: 1)
+        content.shadow(color: Color(hex: "B97A6E").opacity(0.10), radius: 12, x: 0, y: 5)
     }
 }
 
 struct PrimaryButtonShadow: ViewModifier {
     func body(content: Content) -> some View {
-        content.shadow(color: Color(hex: "B88AA2").opacity(0.26), radius: 10, x: 0, y: 8)
+        content.shadow(color: Theme.Colors.primaryButton.opacity(0.18), radius: 10, x: 0, y: 6)
     }
 }
 
 struct StatCardShadow: ViewModifier {
     func body(content: Content) -> some View {
-        content.shadow(color: Color(hex: "B88AA2").opacity(0.30), radius: 13, x: 0, y: 10)
+        content.shadow(color: Theme.Colors.primaryButton.opacity(0.22), radius: 14, x: 0, y: 10)
     }
 }
 
 struct TabBarShadow: ViewModifier {
     func body(content: Content) -> some View {
-        content.shadow(color: Color(hex: "3A2E2B").opacity(0.16), radius: 15, x: 0, y: 12)
+        content.shadow(color: Color(hex: "B97A6E").opacity(0.20), radius: 16, x: 0, y: 10)
+    }
+}
+
+/// Fond "papier aquarelle" inspiré du logo : rose pâle et quelques lavis plus soutenus.
+struct PaperBackground: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            ZStack {
+                Theme.Colors.background
+                wash(size: w * 0.95, opacity: 0.55).position(x: w * 0.08, y: h * 0.06)
+                wash(size: w * 0.75, opacity: 0.32).position(x: w * 0.98, y: h * 0.42)
+                wash(size: w * 1.05, opacity: 0.40).position(x: w * 0.25, y: h * 0.97)
+            }
+        }
+        .drawingGroup()
+        .ignoresSafeArea()
+    }
+
+    private func wash(size: CGFloat, opacity: Double) -> some View {
+        Circle()
+            .fill(Theme.Colors.watercolor.opacity(opacity))
+            .frame(width: size, height: size)
+            .blur(radius: size * 0.22)
     }
 }
 

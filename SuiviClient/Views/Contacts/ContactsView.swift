@@ -19,7 +19,7 @@ struct ContactsView: View {
         VStack(spacing: 0) {
             VStack(spacing: 12) {
                 HStack(alignment: .lastTextBaseline) {
-                    Text("Contacts").font(AppFont.playfair(22, weight: .bold)).tracking(AppTracking.screenTitle)
+                    Text("Contacts").font(AppFont.display(22, weight: .semibold)).tracking(AppTracking.screenTitle).textCase(.uppercase)
                     Spacer()
                     Text("\(allClients.count) clientes")
                         .font(AppFont.montserrat(12))
@@ -31,7 +31,7 @@ struct ContactsView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 13)
-                .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(.white))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.card))
                 .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
             }
             .padding(.horizontal, Theme.Spacing.contentMargin)
@@ -71,7 +71,7 @@ struct ContactsView: View {
                             }
                         }
                     }
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(.white))
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
                 }
                 .padding(.horizontal, Theme.Spacing.contentMargin)
@@ -79,7 +79,7 @@ struct ContactsView: View {
             }
             .refreshable { await store.sync() }
         }
-        .background(Theme.Colors.background)
+        .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
     }
 

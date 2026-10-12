@@ -13,7 +13,8 @@ import Observation
 final class DataStore {
     private(set) var clients: [Client] = []
     private(set) var catalog: CatalogData = CatalogData()
-    private(set) var photoManifest: Set<String> = []
+    /// Photos prises sur ce téléphone et pas encore envoyées sur Drive.
+    private(set) var pendingPhotoNames: Set<String>
     private(set) var isSyncing = false
     /// false jusqu'à la fin de la première synchro du lancement (réussie ou non) — tant
     /// que c'est false, l'app affiche l'écran de chargement (`SplashView`).
@@ -28,6 +29,8 @@ final class DataStore {
         self.clients = fileStore.loadAllClients()
         self.catalog = fileStore.loadCatalog()
         self.pendingDeletes = fileStore.loadPendingDeletes()
+        self.pendingPhotoNames = Set(fileStore.pendingPhotoNames())
+        fileStore.removeLegacyPhotoCache()
         syncAtLaunch()
     }
 
@@ -46,6 +49,7 @@ final class DataStore {
     /// est déjà en cours, on attend simplement sa fin au lieu d'en lancer une deuxième.
     @MainActor
     func sync() async {
+        defer { settleFinishedInstallments() }
         guard DriveConfig.isConfigured else {
             hasFinishedLaunchSync = true
             return
@@ -74,12 +78,7 @@ final class DataStore {
             pendingDeletes.removeAll()
             fileStore.savePendingDeletes(pendingDeletes)
 
-            for name in fileStore.pendingPhotoNames() {
-                if let data = fileStore.pendingPhotoData(name: name),
-                   (try? await DriveBridge.uploadPhoto(name: name, data: data)) != nil {
-                    fileStore.removePendingPhoto(name: name)
-                }
-            }
+            await uploadPendingPhotos(Array(pendingPhotoNames))
 
             let remote = try await DriveBridge.pull()
 
@@ -126,7 +125,6 @@ final class DataStore {
                 fileStore.save(remote.catalog)
             }
 
-            photoManifest = Set(remote.photoNames).union(fileStore.pendingPhotoNames())
             lastSyncError = nil
         } catch {
             lastSyncError = "Hors ligne — synchro à la prochaine ouverture."
@@ -178,17 +176,18 @@ final class DataStore {
         let name = draft.name.trimmingCharacters(in: .whitespaces)
         let phone = draft.phone.trimmingCharacters(in: .whitespaces).isEmpty ? "—" : draft.phone
         let (isPaid, plan): (Bool, Installments?)
+        let deposit: Decimal? = draft.category == .vente && draft.venteAcompteValue > 0 ? draft.venteAcompteValue : nil
         if draft.category == .vente {
             let reste = draft.priceValue - draft.venteAcompteValue
-            if draft.venteAcompteValue <= 0 {
-                (isPaid, plan) = (false, nil)
-            } else if reste <= 0 {
+            if reste <= 0 || draft.venteSoldePaye {
                 (isPaid, plan) = (true, nil)
+            } else if draft.venteAcompteValue > 0 || draft.planCountValue != nil {
+                (isPaid, plan) = (false, Installments(paid: draft.venteAcompteValue, due: draft.planDue, method: draft.planMethod, count: draft.planCountValue))
             } else {
-                (isPaid, plan) = (false, Installments(paid: draft.venteAcompteValue, due: draft.planDue, method: draft.planMethod))
+                (isPaid, plan) = (false, nil)
             }
-        } else if draft.pay == .plusieursFois {
-            (isPaid, plan) = (false, Installments(paid: Decimal(string: draft.planPaid) ?? 0, due: draft.planDue, method: draft.planMethod))
+        } else if draft.pay == .plusieursFois && draft.category.allowsInstallments {
+            (isPaid, plan) = (false, Installments(paid: Decimal(string: draft.planPaid) ?? 0, due: draft.planDue, method: draft.planMethod, count: draft.planCountValue))
         } else {
             (isPaid, plan) = (draft.pay == .paye, nil)
         }
@@ -201,31 +200,43 @@ final class DataStore {
             t.origine = draft.category == .vente ? draft.origine : nil
             t.price = draft.priceValue
             t.isPaid = isPaid
-            t.method = draft.method
-            t.plan = plan
+            t.method = draft.paymentMethod
+            // Les paiements en espèces déjà notés restent attachés à l'échelonnement ; une
+            // fiche passée en "Payé" garde son échelonnement comme historique.
+            if var newPlan = plan {
+                newPlan.received = t.plan?.received
+                t.plan = newPlan
+            } else {
+                t.plan = isPaid ? t.plan : nil
+            }
+            t.deposit = deposit
             t.status = draft.status
             t.dropDate = draft.dropDate
             t.pickupDate = draft.pickupDate
             t.returnDate = draft.returnDate
             t.pickup2Date = draft.pickup2Date
-            t.note = draft.note
+            if t.note != draft.note {
+                t.note = draft.note
+                t.noteUpdatedAt = .now
+            }
+            let newPhotos = stagePhotos(draft.photos, in: &t, kind: PhotoKind(for: draft.category))
             client.transactions[idx] = t
             client.name = name
             client.phone = phone
             persist(client)
-            storePhotos(draft.photos, transactionID: t.id, category: draft.category)
+            uploadInBackground(newPhotos)
             return (client.id, t.id)
         }
 
         var target = client(named: name) ?? Client(name: name, phone: phone, isSavedContact: draft.saveContact)
-        let newTransaction = AppTransaction(
+        var newTransaction = AppTransaction(
             ref: nextRef(),
             category: draft.category,
             item: draft.itemLabel,
             origine: draft.category == .vente ? draft.origine : nil,
             price: draft.priceValue,
             isPaid: isPaid,
-            method: draft.method,
+            method: draft.paymentMethod,
             plan: plan,
             status: draft.status,
             dropDate: draft.dropDate,
@@ -234,17 +245,14 @@ final class DataStore {
             pickup2Date: draft.pickup2Date,
             note: draft.note
         )
+        newTransaction.deposit = deposit
+        if !draft.note.isEmpty { newTransaction.noteUpdatedAt = .now }
+        let newPhotos = stagePhotos(draft.photos, in: &newTransaction, kind: PhotoKind(for: draft.category))
         target.phone = phone
         target.transactions.append(newTransaction)
         persist(target)
-        storePhotos(draft.photos, transactionID: newTransaction.id, category: draft.category)
+        uploadInBackground(newPhotos)
         return (target.id, newTransaction.id)
-    }
-
-    private func storePhotos(_ photos: [Data], transactionID: UUID, category: Category) {
-        guard !photos.isEmpty else { return }
-        let kind: PhotoKind = category == .vente ? .apres : .avant
-        for data in photos { addPhoto(data, transactionID: transactionID, kind: kind) }
     }
 
     private func updateTransaction(clientID: UUID, transactionID: UUID, mutate: (inout AppTransaction) -> Void) {
@@ -272,10 +280,57 @@ final class DataStore {
         }
     }
 
+    /// Modification de la note directement depuis la fiche (sans passer par Modifier).
+    func updateNote(clientID: UUID, transactionID: UUID, note: String) {
+        guard entry(clientID: clientID, transactionID: transactionID)?.note != note else { return }
+        updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            t.note = note
+            t.noteUpdatedAt = .now
+        }
+    }
+
+    /// Espèces : note un paiement reçu ; quand tout le prix est couvert, la fiche passe
+    /// d'elle-même en payé.
+    func recordInstallmentPayment(clientID: UUID, transactionID: UUID, amount: Decimal, date: Date) {
+        updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            guard t.plan != nil else { return }
+            let received = t.plan?.received ?? []
+            t.plan?.received = received + [InstallmentReceipt(date: date, amount: amount)]
+            if let left = t.planLeft, left <= 0 { t.isPaid = true }
+        }
+    }
+
+    /// Retire un paiement noté par erreur (la fiche repasse en cours si elle n'est plus
+    /// entièrement payée).
+    func deleteInstallmentPayment(clientID: UUID, transactionID: UUID, receiptID: UUID) {
+        updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            t.plan?.received?.removeAll { $0.id == receiptID }
+            if let left = t.planLeft, left > 0 { t.isPaid = false }
+        }
+    }
+
+    /// Chèque / carte : une fois la date de la dernière mensualité passée, la fiche est
+    /// considérée payée. Lancé après chaque synchro (donc à l'ouverture de l'app).
+    @MainActor
+    func settleFinishedInstallments() {
+        let today = Calendar.current.startOfDay(for: .now)
+        for var client in clients {
+            var changed = false
+            for idx in client.transactions.indices {
+                let t = client.transactions[idx]
+                guard !t.isPaid, let plan = t.plan, plan.method != .especes,
+                      let last = t.installmentDates.last, Calendar.current.startOfDay(for: last) < today else { continue }
+                client.transactions[idx].isPaid = true
+                changed = true
+            }
+            if changed { persist(client) }
+        }
+    }
+
     func markPaid(clientID: UUID, transactionID: UUID) {
         updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            t.deposit = t.depositAmount
             t.isPaid = true
-            t.plan = nil
         }
     }
 
@@ -352,6 +407,40 @@ final class DataStore {
         persistCatalog(updated)
     }
 
+    /// Prix préenregistré d'une entrée (nil pour l'enlever).
+    func setCatalogPrice(type: CatalogType, id: UUID, price: Decimal?) {
+        var updated = catalog
+        guard let idx = updated[type].firstIndex(where: { $0.id == id }) else { return }
+        updated[type][idx].price = price
+        persistCatalog(updated)
+    }
+
+    func catalogItem(type: CatalogType, named name: String) -> CatalogItem? {
+        catalog[type].first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+    }
+
+    /// Prix proposé dans le formulaire d'après les prix préenregistrés des Paramètres :
+    /// somme des réparations choisies (× nombre pour celles à l'unité), prix de la
+    /// colorimétrie, ou du lavage. nil si rien de choisi n'a de prix.
+    func suggestedPrice(for draft: TransactionFormDraft) -> Decimal? {
+        switch draft.category {
+        case .reparation:
+            let prices = draft.reparations.compactMap { name -> Decimal? in
+                guard let unitPrice = catalogItem(type: .reparation, named: name)?.price else { return nil }
+                return unitPrice * Decimal(draft.reparationQuantities[name] ?? 1)
+            }
+            return prices.isEmpty ? nil : prices.reduce(0, +)
+        case .couleur:
+            return catalogItem(type: .typeCouleur, named: draft.typeCouleur)?.price
+        case .lavage:
+            let name = draft.lavage == "Lavage seul" ? "Lavage"
+                : (draft.finition == "Cranté" ? "Lavage coiffage cranté" : "Lavage coiffage")
+            return catalogItem(type: .reparation, named: name)?.price
+        case .vente, .produit, .coupe:
+            return nil
+        }
+    }
+
     private func persistCatalog(_ updated: CatalogData) {
         var toSave = updated
         toSave.version += 1
@@ -369,53 +458,92 @@ final class DataStore {
 
     // MARK: - Photos (uniquement sur Drive une fois envoyées — voir LISEZ-MOI)
 
+    /// Photos déjà téléchargées pendant cette session — en mémoire seulement, rien n'est
+    /// écrit sur le téléphone ; iOS peut les vider s'il manque de mémoire.
+    private let downloadedPhotos = NSCache<NSString, NSData>()
+
     func photoNames(transactionID: UUID, kind: PhotoKind) -> [String] {
-        let prefix = "\(transactionID.uuidString)_\(kind.rawValue)_"
-        return photoManifest.filter { $0.hasPrefix(prefix) }.sorted()
+        let prefix = Self.photoPrefix(transactionID, kind)
+        let transaction = clients.lazy.flatMap(\.transactions).first { $0.id == transactionID }
+        return (transaction?.photoNames ?? []).filter { $0.hasPrefix(prefix) }
     }
 
-    /// Compresse puis met en attente localement (au cas où hors ligne), et tente l'envoi
-    /// immédiat sur Drive — une fois confirmé, la copie locale temporaire est effacée.
-    func addPhoto(_ rawData: Data, transactionID: UUID, kind: PhotoKind) {
-        let data = ImageCompressor.compress(rawData)
-        let name = nextPhotoName(transactionID: transactionID, kind: kind)
-        photoManifest.insert(name)
-        fileStore.stagePendingPhoto(data, name: name)
+    /// Ajout depuis la fiche : la photo est enregistrée dans la fiche (son nom), puis
+    /// envoyée sur Drive.
+    func addPhoto(_ rawData: Data, clientID: UUID, transactionID: UUID, kind: PhotoKind) {
+        guard var client = client(id: clientID),
+              let idx = client.transactions.firstIndex(where: { $0.id == transactionID }) else { return }
+        let newPhotos = stagePhotos([rawData], in: &client.transactions[idx], kind: kind)
+        persist(client)
+        uploadInBackground(newPhotos)
+    }
+
+    /// Compresse chaque photo, la garde sur le téléphone le temps de l'envoyer, et ajoute
+    /// son nom à la fiche — c'est ce nom, synchronisé avec la fiche, qui indique aux deux
+    /// iPhone qu'il y a une photo à télécharger. Retourne les noms à envoyer.
+    private func stagePhotos(_ photos: [Data], in transaction: inout AppTransaction, kind: PhotoKind) -> [String] {
+        photos.map { rawData in
+            let name = nextPhotoName(in: transaction, kind: kind)
+            fileStore.stagePendingPhoto(ImageCompressor.compress(rawData), name: name)
+            pendingPhotoNames.insert(name)
+            transaction.photoNames.append(name)
+            return name
+        }
+    }
+
+    private func uploadInBackground(_ names: [String]) {
+        guard !names.isEmpty else { return }
+        Task { @MainActor in await uploadPendingPhotos(names) }
+    }
+
+    /// Envoie les photos en attente ; une fois confirmée par Drive, la copie du téléphone
+    /// est effacée. Celles qui échouent restent en attente jusqu'à la prochaine synchro.
+    @MainActor
+    private func uploadPendingPhotos(_ names: [String]) async {
         guard DriveConfig.isConfigured else { return }
-        Task { @MainActor in
+        for name in names {
+            guard let data = fileStore.pendingPhotoData(name: name) else {
+                pendingPhotoNames.remove(name)
+                continue
+            }
             if (try? await DriveBridge.uploadPhoto(name: name, data: data)) != nil {
                 fileStore.removePendingPhoto(name: name)
+                pendingPhotoNames.remove(name)
             }
         }
     }
 
-    private func nextPhotoName(transactionID: UUID, kind: PhotoKind) -> String {
-        let prefix = "\(transactionID.uuidString)_\(kind.rawValue)_"
-        let indices = photoManifest.compactMap { name -> Int? in
+    private static func photoPrefix(_ transactionID: UUID, _ kind: PhotoKind) -> String {
+        "\(transactionID.uuidString)_\(kind.rawValue)_"
+    }
+
+    private func nextPhotoName(in transaction: AppTransaction, kind: PhotoKind) -> String {
+        let prefix = Self.photoPrefix(transaction.id, kind)
+        let indices = transaction.photoNames.compactMap { name -> Int? in
             guard name.hasPrefix(prefix) else { return nil }
-            let numberPart = name.dropFirst(prefix.count).prefix { $0.isNumber }
-            return Int(numberPart)
+            return Int(name.dropFirst(prefix.count).prefix { $0.isNumber })
         }
         return "\(prefix)\((indices.max() ?? 0) + 1).jpg"
     }
 
     private func removePhotos(transactionID: UUID) {
         let prefix = "\(transactionID.uuidString)_"
-        photoManifest = photoManifest.filter { !$0.hasPrefix(prefix) }
-        for name in fileStore.pendingPhotoNames() where name.hasPrefix(prefix) {
+        for name in pendingPhotoNames where name.hasPrefix(prefix) {
             fileStore.removePendingPhoto(name: name)
+            pendingPhotoNames.remove(name)
         }
         guard DriveConfig.isConfigured else { return }
         Task { @MainActor in try? await DriveBridge.deletePhotos(transactionID: transactionID) }
     }
 
-    /// Charge les octets d'une photo pour l'affichage : en attente locale → cache local →
-    /// téléchargement Drive (mis en cache ensuite). `nil` si rien n'est joignable.
+    /// Charge une photo pour l'affichage : pas encore envoyée (sur le téléphone) → déjà
+    /// téléchargée pendant cette session → téléchargement Drive. `nil` si le
+    /// téléchargement a échoué (hors ligne, photo pas encore arrivée sur Drive…).
     func loadPhotoData(name: String) async -> Data? {
         if let pending = fileStore.pendingPhotoData(name: name) { return pending }
-        if let cached = fileStore.cachedPhotoData(name: name) { return cached }
+        if let downloaded = downloadedPhotos.object(forKey: name as NSString) { return downloaded as Data }
         guard DriveConfig.isConfigured, let data = try? await DriveBridge.downloadPhoto(name: name) else { return nil }
-        fileStore.cachePhotoData(data, name: name)
+        downloadedPhotos.setObject(data as NSData, forKey: name as NSString)
         return data
     }
 }
