@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F16FEF076BCBCA8966AF140 /* EditClientView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840024B67C082116A01652F4 /* EditClientView.swift */; };
+		81512E6248466765389963C2 /* PhoneContactButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A3A6BA406329963DB9324AD /* PhoneContactButton.swift */; };
+		3E9B40291A6679FCDB498EE6 /* CalendarSettingsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7E82B167BE896E4341500E /* CalendarSettingsCard.swift */; };
+		D33B03329B953AE843147CC0 /* AppointmentEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CADE0667353C02BA1DF264C /* AppointmentEditorView.swift */; };
+		4DEFADA4623C9636D4A93616 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF97F112C206991A1E2F7F78 /* CalendarView.swift */; };
+		1C900FD5D4A2A8B72D6E8AE7 /* Holidays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5831C4EFC20EC18AFB664445 /* Holidays.swift */; };
+		516CC2C988F7BDEA434D793C /* AppointmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8178023E56C97E93637599B5 /* AppointmentStore.swift */; };
+		77C1BBF636669F315B7F30DB /* Appointment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C72B75BE3EE6B1D1901969 /* Appointment.swift */; };
+		3238BB0A211AA4085CD78644 /* GoHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC131DADCE766466C5DA39E /* GoHome.swift */; };
 		7B3E9A1C5D2F4E6A8B0C1D22 /* CormorantGaramond-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7B3E9A1C5D2F4E6A8B0C1D21 /* CormorantGaramond-Regular.ttf */; };
 		5A1C0E7D3B2F4A6E8C9D0B12 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5A1C0E7D3B2F4A6E8C9D0B11 /* Assets.xcassets */; };
 		0876826F38AD4764E6BC9A96 /* TransactionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 231C2E2AFB97136F2353174F /* TransactionsListView.swift */; };
@@ -55,6 +64,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		840024B67C082116A01652F4 /* EditClientView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditClientView.swift; sourceTree = "<group>"; };
+		5A3A6BA406329963DB9324AD /* PhoneContactButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhoneContactButton.swift; sourceTree = "<group>"; };
+		7F7E82B167BE896E4341500E /* CalendarSettingsCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarSettingsCard.swift; sourceTree = "<group>"; };
+		2CADE0667353C02BA1DF264C /* AppointmentEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppointmentEditorView.swift; sourceTree = "<group>"; };
+		CF97F112C206991A1E2F7F78 /* CalendarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		5831C4EFC20EC18AFB664445 /* Holidays.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Holidays.swift; sourceTree = "<group>"; };
+		8178023E56C97E93637599B5 /* AppointmentStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppointmentStore.swift; sourceTree = "<group>"; };
+		F1C72B75BE3EE6B1D1901969 /* Appointment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Appointment.swift; sourceTree = "<group>"; };
+		CEC131DADCE766466C5DA39E /* GoHome.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoHome.swift; sourceTree = "<group>"; };
 		7B3E9A1C5D2F4E6A8B0C1D21 /* CormorantGaramond-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; path = "CormorantGaramond-Regular.ttf"; sourceTree = "<group>"; };
 		5A1C0E7D3B2F4A6E8C9D0B11 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		069909897D5BEE6B4FC798EC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -118,6 +136,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		89EF0B197D7A9BD08E825FD6 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				2CADE0667353C02BA1DF264C /* AppointmentEditorView.swift */,
+				CF97F112C206991A1E2F7F78 /* CalendarView.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
 		0D0DEEDE8EB6A1EC2E0B5EBD /* iOS */ = {
 			isa = PBXGroup;
 			children = (
@@ -129,6 +156,7 @@
 		159533CF1008778054DE0641 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				89EF0B197D7A9BD08E825FD6 /* Calendar */,
 				DACA0236BA6DFB038045AC88 /* Components */,
 				22A323B0B39C39B35FF07308 /* Contacts */,
 				1F5FF808731343518ABC45E7 /* Detail */,
@@ -153,6 +181,7 @@
 		22A323B0B39C39B35FF07308 /* Contacts */ = {
 			isa = PBXGroup;
 			children = (
+				840024B67C082116A01652F4 /* EditClientView.swift */,
 				2C668BFBAE21B925E19C88C1 /* ClientDetailView.swift */,
 				75CC893D6E5E7C54183423EA /* ContactsView.swift */,
 				5EB3A66379C0D12D17FEB9F8 /* NewContactView.swift */,
@@ -163,6 +192,7 @@
 		41866E2C8FF1E8431242FED1 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				7F7E82B167BE896E4341500E /* CalendarSettingsCard.swift */,
 				6B7CEED3490A19AC89B0E80C /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -179,6 +209,7 @@
 		4CDF2F3BB3BD481CC3409C8F /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				F1C72B75BE3EE6B1D1901969 /* Appointment.swift */,
 				619A0AC6547EDAEAB36D402B /* AppTransaction.swift */,
 				E12632EFF5D5565321F61B38 /* CatalogEntry.swift */,
 				D5B828D023986121FD16D4F3 /* Client.swift */,
@@ -233,6 +264,8 @@
 		C2BC78FC7DFAAA014054803C /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				5831C4EFC20EC18AFB664445 /* Holidays.swift */,
+				8178023E56C97E93637599B5 /* AppointmentStore.swift */,
 				E67FD129CE15D92529DDD7EE /* DataStore.swift */,
 				D0DEBDABAE36EC20725449A5 /* DriveBridge.swift */,
 				60A35EBBE3E5FAAA52F9EB57 /* DriveConfig.swift */,
@@ -247,6 +280,7 @@
 		C469186A16E609A88B619914 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
+				CEC131DADCE766466C5DA39E /* GoHome.swift */,
 				D4834202815837FF5E698C48 /* AppRoute.swift */,
 				0F01FC6F9279484234423754 /* FloatingTabBar.swift */,
 				5E8828F1DD81E8250F584884 /* RootView.swift */,
@@ -282,6 +316,7 @@
 		DACA0236BA6DFB038045AC88 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				5A3A6BA406329963DB9324AD /* PhoneContactButton.swift */,
 				F4D05828ACC29856BF1EEBFF /* Avatar.swift */,
 				64F8B568F1C3FC582678ACD1 /* ChipButton.swift */,
 				2973A7982ABB462EEC7E38C9 /* FlowLayout.swift */,
@@ -392,6 +427,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F16FEF076BCBCA8966AF140 /* EditClientView.swift in Sources */,
+				81512E6248466765389963C2 /* PhoneContactButton.swift in Sources */,
+				3E9B40291A6679FCDB498EE6 /* CalendarSettingsCard.swift in Sources */,
+				D33B03329B953AE843147CC0 /* AppointmentEditorView.swift in Sources */,
+				4DEFADA4623C9636D4A93616 /* CalendarView.swift in Sources */,
+				1C900FD5D4A2A8B72D6E8AE7 /* Holidays.swift in Sources */,
+				516CC2C988F7BDEA434D793C /* AppointmentStore.swift in Sources */,
+				77C1BBF636669F315B7F30DB /* Appointment.swift in Sources */,
+				3238BB0A211AA4085CD78644 /* GoHome.swift in Sources */,
 				E4753E00CB6296562B6EFEE5 /* AppTransaction.swift in Sources */,
 				3887797352FF5D15EE5ADDA2 /* CatalogEntry.swift in Sources */,
 				317979D397139B7149ED319B /* Client.swift in Sources */,

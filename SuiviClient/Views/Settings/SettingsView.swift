@@ -32,6 +32,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 12) {
                     storageCard
+                    CalendarSettingsCard()
 
                     FlowLayout(spacing: 6) {
                         ForEach(CatalogType.allCases) { t in

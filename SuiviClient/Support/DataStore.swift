@@ -228,7 +228,9 @@ final class DataStore {
             return (client.id, t.id)
         }
 
-        var target = client(named: name) ?? Client(name: name, phone: phone, isSavedContact: draft.saveContact)
+        var target = draft.clientID.flatMap { client(id: $0) }
+            ?? client(named: name)
+            ?? Client(name: name, phone: phone, isSavedContact: draft.saveContact)
         var newTransaction = AppTransaction(
             ref: nextRef(),
             category: draft.category,
@@ -390,6 +392,14 @@ final class DataStore {
         let client = Client(name: name, phone: phone.isEmpty ? "—" : phone, isSavedContact: true)
         persist(client)
         return client.id
+    }
+
+    /// Nom et téléphone d'une cliente (fiche cliente → Modifier).
+    func updateClient(id: UUID, name: String, phone: String) {
+        guard var client = client(id: id) else { return }
+        client.name = name
+        client.phone = phone.isEmpty ? "—" : phone
+        persist(client)
     }
 
     // MARK: - Écriture : catalogues

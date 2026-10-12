@@ -28,6 +28,13 @@ struct HomeView: View {
                     }
                 }
 
+                // En haut, pour rester accessibles même quand les listes sont longues.
+                HStack(spacing: 10) {
+                    shortcut("Toutes les transactions", count: allEntries.count, route: .transactionsList)
+                    shortcut("Tous les contacts", count: store.clients.count, route: .contacts)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+
                 section(key: "enCours", title: "En cours", dot: Theme.Colors.statusEnCoursDot, items: enCours,
                         emptyLabel: "Rien en atelier.") { t in
                     let d = t.ageDays
@@ -61,24 +68,6 @@ struct HomeView: View {
                     return (text, late ? Theme.Colors.unpaidText : Theme.Colors.installmentText, late)
                 }
 
-                Button {
-                    path.append(.transactionsList)
-                } label: {
-                    HStack {
-                        Text("Toutes les transactions")
-                            .font(AppFont.montserrat(14, weight: .semibold))
-                            .foregroundStyle(Theme.Colors.textPrimary)
-                        Spacer()
-                        Text("\(allEntries.count) →")
-                            .font(AppFont.montserrat(13, weight: .medium))
-                            .foregroundStyle(Theme.Colors.textSecondary)
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 15)
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(Theme.Colors.card))
-                    .overlay(RoundedRectangle(cornerRadius: Theme.Radius.button).strokeBorder(Theme.Colors.border, lineWidth: 1))
-                }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, Theme.Spacing.contentMargin)
             .padding(.top, 8)
@@ -87,6 +76,35 @@ struct HomeView: View {
         .refreshable { await store.sync() }
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func shortcut(_ title: String, count: Int, route: AppRoute) -> some View {
+        Button {
+            path.append(route)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(AppFont.montserrat(13, weight: .semibold))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                HStack {
+                    Text("\(count)")
+                        .font(AppFont.display(18, weight: .semibold))
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 12, weight: .light))
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(Theme.Colors.card))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.button).strokeBorder(Theme.Colors.border, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder

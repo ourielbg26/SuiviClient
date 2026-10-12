@@ -3,6 +3,9 @@ import SwiftUI
 struct ClientDetailView: View {
     let clientID: UUID
     @Environment(DataStore.self) private var store
+    @Environment(AppointmentStore.self) private var agenda
+    @State private var openedAppointment: Appointment?
+    @State private var showsEdit = false
 
     private var client: Client {
         store.client(id: clientID) ?? Client(id: clientID, name: "—", phone: "—")
@@ -22,6 +25,21 @@ struct ClientDetailView: View {
                     .font(AppFont.montserrat(12, weight: .medium))
                     .foregroundStyle(Theme.Colors.textSecondary)
                 Spacer()
+                Button {
+                    showsEdit = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "pencil")
+                        Text("Modifier")
+                    }
+                    .font(AppFont.montserrat(12, weight: .semibold))
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(Theme.Colors.card))
+                    .overlay(Capsule().strokeBorder(Theme.Colors.border, lineWidth: 1))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, Theme.Spacing.contentMargin)
             .padding(.top, 6)
@@ -52,6 +70,36 @@ struct ClientDetailView: View {
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
 
+                    // En haut : une cliente peut avoir plusieurs fiches ouvertes en même
+                    // temps (en cours, en cours de paiement…), on peut toujours en ajouter.
+                    NavigationLink(value: AppRoute.newTransactionForm(prefillName: client.name == "—" ? "" : client.name, prefillPhone: client.phone == "—" ? "" : client.phone, clientID: client.id)) {
+                        HStack(spacing: 9) {
+                            Image(systemName: "plus")
+                            Text("Nouvelle fiche pour \(client.name.components(separatedBy: " ").first ?? client.name)")
+                        }
+                        .font(AppFont.montserrat(15, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(Theme.Colors.primaryButton))
+                        .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                    .primaryButtonShadow()
+
+                    let upcoming = agenda.upcoming(for: client)
+                    if !upcoming.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Rendez-vous à venir").font(AppFont.display(16, weight: .semibold))
+                            ForEach(upcoming) { a in
+                                AppointmentRow(appointment: a, showsDate: true) { openedAppointment = a }
+                            }
+                        }
+                        .padding(18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
+                        .cardShadow()
+                    }
+
                     HStack(alignment: .lastTextBaseline) {
                         Text("Historique").font(AppFont.display(16, weight: .semibold))
                         Spacer()
@@ -81,19 +129,6 @@ struct ClientDetailView: View {
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.card).fill(Theme.Colors.card))
                     .cardShadow()
 
-                    NavigationLink(value: AppRoute.newTransactionForm(prefillName: client.name == "—" ? "" : client.name, prefillPhone: client.phone == "—" ? "" : client.phone)) {
-                        HStack(spacing: 9) {
-                            Image(systemName: "plus")
-                            Text("Nouvelle transaction")
-                        }
-                        .font(AppFont.montserrat(15, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(RoundedRectangle(cornerRadius: Theme.Radius.button).fill(Theme.Colors.primaryButton))
-                        .foregroundStyle(.white)
-                    }
-                    .buttonStyle(.plain)
-                    .primaryButtonShadow()
                 }
                 .padding(.horizontal, Theme.Spacing.contentMargin)
                 .screenBottomPadding()
@@ -101,6 +136,13 @@ struct ClientDetailView: View {
         }
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(item: $openedAppointment) { a in
+            AppointmentEditorView(appointment: a, isNew: false)
+        }
+        .sheet(isPresented: $showsEdit) {
+            EditClientView(clientID: clientID, name: client.name, phone: client.phone == "—" ? "" : client.phone)
+                .presentationDetents([.medium])
+        }
     }
 
     private func tile(_ label: String, _ value: String) -> some View {

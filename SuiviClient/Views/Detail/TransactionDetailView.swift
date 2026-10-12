@@ -5,6 +5,7 @@ struct TransactionDetailView: View {
     let transactionID: UUID
     @Environment(DataStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.goHome) private var goHome
     @State private var askDelete = false
 
     private var transaction: TransactionEntry? {
@@ -102,18 +103,35 @@ struct TransactionDetailView: View {
                 Text(transaction.item)
                     .font(AppFont.montserrat(13, weight: .medium))
                     .foregroundStyle(colors.fg)
-                NavigationLink(value: AppRoute.clientDetail(clientID: clientID)) {
-                    HStack(spacing: 4) {
-                        Text("Voir la fiche de \(transaction.firstName)")
-                        Image(systemName: "chevron.right")
+                HStack(spacing: 8) {
+                    NavigationLink(value: AppRoute.clientDetail(clientID: clientID)) {
+                        HStack(spacing: 4) {
+                            Text("Voir la fiche de \(transaction.firstName)")
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(AppFont.montserrat(12, weight: .semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(Color.white.opacity(0.72)))
+                        .foregroundStyle(colors.fg)
                     }
-                    .font(AppFont.montserrat(12, weight: .semibold))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Capsule().fill(Color.white.opacity(0.72)))
-                    .foregroundStyle(colors.fg)
+                    .buttonStyle(.plain)
+                    // Ajouter un autre travail à la même cliente, sans toucher à cette fiche.
+                    NavigationLink(value: AppRoute.newTransactionForm(prefillName: transaction.clientName,
+                                                                      prefillPhone: transaction.phone == "—" ? "" : transaction.phone,
+                                                                      clientID: transaction.clientID)) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                            Text("Nouvelle fiche")
+                        }
+                        .font(AppFont.montserrat(12, weight: .semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Capsule().fill(Color.white.opacity(0.72)))
+                        .foregroundStyle(colors.fg)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
                 .padding(.top, 6)
             }
             HStack(alignment: .bottom) {
@@ -185,6 +203,7 @@ struct TransactionDetailView: View {
 
     private func setStatus(_ new: WorkStatus) {
         store.setStatus(clientID: clientID, transactionID: transactionID, to: new)
+        goHome()
     }
 
     private func details(_ transaction: TransactionEntry) -> some View {
@@ -271,6 +290,7 @@ struct TransactionDetailView: View {
                 if !transaction.isPaid {
                     PrimaryButton(title: "Marquer comme payé") {
                         store.markPaid(clientID: clientID, transactionID: transactionID)
+                        goHome()
                     }
                 }
             }

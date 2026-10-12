@@ -14,6 +14,8 @@ enum PhotoKind: String {
 /// Structure sur disque :
 ///   Clients/<id>.json     — une cliente + toutes ses transactions
 ///   Catalog.json           — les 4 catalogues
+///   Appointments.json      — rendez-vous du calendrier (ce téléphone uniquement)
+///   CalendarSettings.json  — réglages du calendrier
 ///   PendingPhotos/…         — photos pas encore envoyées sur Drive (effacées une fois
 ///                             envoyées : les photos ne restent pas sur le téléphone)
 final class FileStore {
@@ -105,6 +107,33 @@ final class FileStore {
     func savePendingDeletes(_ ids: Set<UUID>) {
         guard let data = try? encoder.encode(Array(ids)) else { return }
         try? data.write(to: pendingDeletesURL, options: .atomic)
+    }
+
+    // MARK: - Calendrier (sur ce téléphone uniquement, pas de synchro Drive)
+
+    private var appointmentsURL: URL { root().appendingPathComponent("Appointments.json") }
+    private var calendarSettingsURL: URL { root().appendingPathComponent("CalendarSettings.json") }
+
+    func loadAppointments() -> [Appointment] {
+        guard let data = try? Data(contentsOf: appointmentsURL),
+              let list = try? decoder.decode([Appointment].self, from: data) else { return [] }
+        return list
+    }
+
+    func save(_ appointments: [Appointment]) {
+        guard let data = try? encoder.encode(appointments) else { return }
+        try? write(data, to: appointmentsURL, keepBackup: true)
+    }
+
+    func loadCalendarSettings() -> CalendarSettings {
+        guard let data = try? Data(contentsOf: calendarSettingsURL),
+              let settings = try? decoder.decode(CalendarSettings.self, from: data) else { return CalendarSettings() }
+        return settings
+    }
+
+    func save(_ settings: CalendarSettings) {
+        guard let data = try? encoder.encode(settings) else { return }
+        try? write(data, to: calendarSettingsURL, keepBackup: false)
     }
 
     // MARK: - Photos en attente d'envoi (prises hors ligne)

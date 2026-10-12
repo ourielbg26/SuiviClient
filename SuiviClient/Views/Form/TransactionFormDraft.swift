@@ -7,6 +7,9 @@ import Foundation
 struct TransactionFormDraft {
     var name: String = ""
     var phone: String = ""
+    /// Cliente existante choisie dans les suggestions (ou celle de la fiche modifiée) :
+    /// la fiche s'ajoute à son dossier, même si d'autres clientes portent le même nom.
+    var clientID: UUID?
     var saveContact: Bool = true
     var category: Category = .reparation
 
@@ -129,6 +132,7 @@ struct TransactionFormDraft {
         var f = TransactionFormDraft()
         f.name = t.clientName
         f.phone = t.phone
+        f.clientID = t.clientID
         f.saveContact = false
         f.category = t.category
         f.price = "\(t.price)"

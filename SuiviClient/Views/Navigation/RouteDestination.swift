@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// Résout une `AppRoute` en vue — partagé par la pile Accueil et la pile Contacts.
-/// `path` est transmis au formulaire : à l'enregistrement il remplace sa propre entrée
-/// par la fiche transaction, pour que "retour" revienne à l'écran d'origine (§6.4).
-/// `store` est passé explicitement (pas via @Environment) car `TransactionFormView`
+/// Résout une `AppRoute` en vue (pile Accueil). `path` sert à l'écran Contacts pour
+/// ouvrir une fiche cliente. `store` est passé explicitement (pas via @Environment) car `TransactionFormView`
 /// en a besoin dès son `init` pour préremplir le brouillon en mode édition.
 @ViewBuilder
 func routeDestination(_ route: AppRoute, path: Binding<[AppRoute]>, store: DataStore) -> some View {
@@ -12,10 +10,12 @@ func routeDestination(_ route: AppRoute, path: Binding<[AppRoute]>, store: DataS
         TransactionsListView()
     case .transactionDetail(let clientID, let transactionID):
         TransactionDetailView(clientID: clientID, transactionID: transactionID)
-    case .newTransactionForm(let name, let phone):
-        TransactionFormView(mode: .create(prefillName: name, prefillPhone: phone), path: path, store: store)
+    case .newTransactionForm(let name, let phone, let clientID):
+        TransactionFormView(mode: .create(prefillName: name, prefillPhone: phone, clientID: clientID), store: store)
     case .editTransactionForm(let clientID, let transactionID):
-        TransactionFormView(mode: .edit(clientID: clientID, transactionID: transactionID), path: path, store: store)
+        TransactionFormView(mode: .edit(clientID: clientID, transactionID: transactionID), store: store)
+    case .contacts:
+        ContactsView(path: path)
     case .clientDetail(let clientID):
         ClientDetailView(clientID: clientID)
     case .newContact:

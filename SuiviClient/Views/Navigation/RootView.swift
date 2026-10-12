@@ -5,7 +5,6 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: AppTab = .home
     @State private var homePath: [AppRoute] = []
-    @State private var contactsPath: [AppRoute] = []
     /// Passe à true au bout de quelques secondes : si des données sont déjà en cache sur
     /// le téléphone, on les montre sans attendre la fin de la synchro Drive (qui peut
     /// prendre plus d'une minute) — elle continue en arrière-plan et met l'écran à jour.
@@ -57,12 +56,9 @@ struct RootView: View {
                     NavigationStack {
                         StatsView()
                     }
-                case .contacts:
-                    NavigationStack(path: $contactsPath) {
-                        ContactsView(path: $contactsPath)
-                            .navigationDestination(for: AppRoute.self) { route in
-                                routeDestination(route, path: $contactsPath, store: store)
-                            }
+                case .calendar:
+                    NavigationStack {
+                        CalendarView()
                     }
                 case .settings:
                     NavigationStack {
@@ -73,6 +69,10 @@ struct RootView: View {
 
             FloatingTabBar(selected: $selectedTab)
         }
+        .environment(\.goHome, GoHomeAction {
+            homePath = []
+            selectedTab = .home
+        })
     }
 }
 

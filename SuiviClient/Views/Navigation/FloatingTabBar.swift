@@ -3,7 +3,7 @@ import SwiftUI
 enum AppTab: String, CaseIterable, Identifiable {
     case home = "Accueil"
     case stats = "Stats"
-    case contacts = "Contacts"
+    case calendar = "Calendrier"
     case settings = "Paramètres"
 
     var id: String { rawValue }
@@ -12,7 +12,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .home: return "house"
         case .stats: return "chart.bar"
-        case .contacts: return "person"
+        case .calendar: return "calendar"
         case .settings: return "slider.horizontal.3"
         }
     }

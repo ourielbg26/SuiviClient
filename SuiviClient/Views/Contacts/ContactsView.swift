@@ -18,7 +18,8 @@ struct ContactsView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 12) {
-                HStack(alignment: .lastTextBaseline) {
+                HStack(alignment: .center, spacing: 10) {
+                    BackButton()
                     Text("Contacts").font(AppFont.display(22, weight: .semibold)).tracking(AppTracking.screenTitle).textCase(.uppercase)
                     Spacer()
                     Text("\(allClients.count) clientes")

@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum FormMode {
-    case create(prefillName: String, prefillPhone: String)
+    case create(prefillName: String, prefillPhone: String, clientID: UUID?)
     case edit(clientID: UUID, transactionID: UUID)
 
     var editingIDs: (clientID: UUID, transactionID: UUID)? {
@@ -12,7 +12,7 @@ enum FormMode {
 
 struct TransactionFormView: View {
     let mode: FormMode
-    @Binding var path: [AppRoute]
+    @Environment(\.goHome) private var goHome
 
     @Environment(DataStore.self) private var store
 
@@ -23,14 +23,14 @@ struct TransactionFormView: View {
     @State private var produitQuery = ""
     @FocusState private var nameFocused: Bool
 
-    init(mode: FormMode, path: Binding<[AppRoute]>, store: DataStore) {
+    init(mode: FormMode, store: DataStore) {
         self.mode = mode
-        self._path = path
         switch mode {
-        case .create(let name, let phone):
+        case .create(let name, let phone, let clientID):
             var d = TransactionFormDraft.blank()
             d.name = name
             d.phone = phone
+            d.clientID = clientID
             _draft = State(initialValue: d)
         case .edit(let clientID, let transactionID):
             if let entry = store.entry(clientID: clientID, transactionID: transactionID) {
@@ -42,11 +42,19 @@ struct TransactionFormView: View {
     }
 
     private var trimmedName: String { draft.name.trimmingCharacters(in: .whitespaces) }
-    private var isKnownClient: Bool { store.clients.contains { $0.name.caseInsensitiveCompare(trimmedName) == .orderedSame } }
+    private var isKnownClient: Bool {
+        draft.clientID != nil || store.clients.contains { $0.name.caseInsensitiveCompare(trimmedName) == .orderedSame }
+    }
 
+    /// Clientes dont le nom contient ce qui est tapé (sans tenir compte des majuscules ni
+    /// des accents) — y compris quand le nom tapé est déjà complet, tant qu'aucune n'a
+    /// été choisie.
     private var nameSuggestions: [Client] {
-        guard !trimmedName.isEmpty, !isKnownClient else { return [] }
-        return Array(store.clients.filter { $0.name.localizedCaseInsensitiveContains(trimmedName) }.prefix(4))
+        guard !trimmedName.isEmpty, draft.clientID == nil else { return [] }
+        return Array(store.clients
+            .filter { $0.name.range(of: trimmedName, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            .prefix(6))
     }
 
     var body: some View {
@@ -93,8 +101,24 @@ struct TransactionFormView: View {
     private var clientCard: some View {
         card {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Cliente").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
-                TextField("Nom et prénom", text: $draft.name)
+                HStack {
+                    Text("Cliente").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+                    Spacer()
+                    PhoneContactButton { name, phone in
+                        if !name.isEmpty {
+                            draft.name = name
+                            draft.clientID = nil
+                        }
+                        if !phone.isEmpty { draft.phone = phone }
+                    }
+                }
+                TextField("Nom et prénom", text: Binding(
+                    get: { draft.name },
+                    set: {
+                        draft.name = $0
+                        draft.clientID = nil
+                    }
+                ))
                     .font(AppFont.montserrat(14))
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.background))
@@ -112,7 +136,8 @@ struct TransactionFormView: View {
                         ForEach(nameSuggestions) { c in
                             Button {
                                 draft.name = c.name
-                                draft.phone = c.phone
+                                draft.phone = c.phone == "—" ? "" : c.phone
+                                draft.clientID = c.id
                                 nameFocused = false
                             } label: {
                                 let colors = AvatarPalette.colors(for: c.name)
@@ -138,6 +163,18 @@ struct TransactionFormView: View {
                     .padding(12)
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.background))
                     .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
+
+                if mode.editingIDs == nil, let id = draft.clientID, let c = store.client(id: id) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 14, weight: .light))
+                        Text("Cliente existante : la fiche s'ajoute au dossier de \(c.name) (\(c.transactions.count) fiche\(c.transactions.count > 1 ? "s" : "")).")
+                            .font(AppFont.montserrat(12))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .foregroundStyle(Theme.Colors.paidText)
+                    .padding(.top, 4)
+                }
 
                 if mode.editingIDs == nil, trimmedName.count > 1, !isKnownClient {
                     HStack(spacing: 10) {
@@ -473,9 +510,8 @@ struct TransactionFormView: View {
 
     private func save() {
         guard draft.isReady else { return }
-        let result = store.saveTransaction(draft: draft, editing: mode.editingIDs)
-        if !path.isEmpty { path.removeLast() }
-        path.append(.transactionDetail(clientID: result.clientID, transactionID: result.transactionID))
+        store.saveTransaction(draft: draft, editing: mode.editingIDs)
+        goHome()
     }
 
     @ViewBuilder
