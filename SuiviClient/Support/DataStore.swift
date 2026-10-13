@@ -26,7 +26,7 @@ final class DataStore {
 
     init(fileStore: FileStore = FileStore()) {
         self.fileStore = fileStore
-        self.clients = fileStore.loadAllClients()
+        self.clients = fileStore.loadAllClients().filter { $0.mergedInto == nil }
         self.catalog = fileStore.loadCatalog()
         self.pendingDeletes = fileStore.loadPendingDeletes()
         self.pendingPhotoNames = Set(fileStore.pendingPhotoNames())
@@ -84,6 +84,13 @@ final class DataStore {
 
             var merged = Dictionary(uniqueKeysWithValues: clients.map { ($0.id, $0) })
             for remoteClient in remote.clients {
+                // Doublon fusionné : la version de Drive fait foi, même si ce téléphone l'a
+                // enregistré avant de savoir lire `mergedInto`.
+                if remoteClient.mergedInto != nil {
+                    merged[remoteClient.id] = remoteClient
+                    fileStore.save(remoteClient)
+                    continue
+                }
                 if let local = merged[remoteClient.id] {
                     if local.version > remoteClient.version {
                         if let pushed = try? await DriveBridge.pushClient(local) {
@@ -113,7 +120,7 @@ final class DataStore {
             for current in clients where (merged[current.id]?.version ?? -1) < current.version {
                 merged[current.id] = current
             }
-            clients = Array(merged.values)
+            clients = merged.values.filter { $0.mergedInto == nil }
 
             if catalog.version > remote.catalog.version {
                 if let pushed = try? await DriveBridge.pushCatalog(catalog) {

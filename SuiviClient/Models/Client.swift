@@ -17,6 +17,9 @@ struct Client: Identifiable, Codable {
     /// Compteur incrémenté à chaque écriture — sert à détecter qu'un autre appareil a
     /// modifié ce fichier depuis notre dernière lecture (voir `FileStore`).
     var version: Int
+    /// Doublon fusionné dans une autre cliente : le fichier reste sur Drive (vide), pour
+    /// qu'aucun iPhone ne le renvoie, mais l'app ne l'affiche plus (voir `DataStore`).
+    var mergedInto: UUID?
 
     init(id: UUID = UUID(), name: String, phone: String, isSavedContact: Bool = true,
          transactions: [AppTransaction] = [], updatedAt: Date = .now, version: Int = 0) {
