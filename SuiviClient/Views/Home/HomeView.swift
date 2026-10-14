@@ -6,8 +6,8 @@ struct HomeView: View {
     @State private var expanded: Set<String> = []
 
     private var allEntries: [TransactionEntry] { store.allEntries.sorted { $0.dropDate < $1.dropDate } }
-    private var enCours: [TransactionEntry] { allEntries.filter { $0.status == .enCours } }
-    private var pret: [TransactionEntry] { allEntries.filter { $0.status == .pret || $0.status == .retour } }
+    private var enCours: [TransactionEntry] { allEntries.filter { $0.status == .enCours || $0.isVenteBackInWork } }
+    private var pret: [TransactionEntry] { allEntries.filter { $0.status == .pret || ($0.status == .retour && !$0.isVenteBackInWork) } }
     /// Rendu sans être payé, ou paiement en espèces avec une mensualité en retard.
     private var impaye: [TransactionEntry] {
         allEntries.filter { $0.plan == nil ? ($0.status == .rendu && !$0.isPaid) : $0.payState == .impaye }
@@ -37,6 +37,9 @@ struct HomeView: View {
 
                 section(key: "enCours", title: "En cours", dot: Theme.Colors.statusEnCoursDot, items: enCours,
                         emptyLabel: "Rien en atelier.") { t in
+                    if t.isVenteBackInWork, let r = t.returnDate {
+                        return (returnLabel(t, since: r), Theme.Colors.unpaidText, false)
+                    }
                     let d = t.ageDays
                     return ("\(t.category == .vente ? "Commandé" : "Déposé") le \(Formatters.shortDate(t.dropDate)) · \(d) j", d > 14 ? Theme.Colors.unpaidText : Theme.Colors.textSecondary, false)
                 }
@@ -44,7 +47,7 @@ struct HomeView: View {
                 section(key: "pret", title: "Prêt à rendre", dot: Theme.Colors.statusPretDot, items: pret,
                         emptyLabel: "Rien à rendre.") { t in
                     if t.status == .retour, let r = t.returnDate {
-                        return ("Retour reçu le \(Formatters.shortDate(r))", Theme.Colors.unpaidText, false)
+                        return (returnLabel(t, since: r), Theme.Colors.unpaidText, false)
                     }
                     return ("Prêt · \(t.category == .vente ? "commandé" : "déposé") le \(Formatters.shortDate(t.dropDate))", Theme.Colors.statusPretText, false)
                 }
@@ -55,7 +58,8 @@ struct HomeView: View {
                         let since = t.nextInstallmentDate.map { " depuis le \(Formatters.shortDate($0))" } ?? ""
                         return ("Mensualité en retard\(since) · reste \(Formatters.money(left))", Theme.Colors.unpaidText, true)
                     }
-                    let label = t.pickupDate.map { "Rendu le \(Formatters.shortDate($0))" } ?? "Rendu"
+                    var label = t.pickupDate.map { "Rendu le \(Formatters.shortDate($0))" } ?? "Rendu"
+                    if let left = t.leftAfterDeposit { label += " · reste \(Formatters.money(left))" }
                     return (label, Theme.Colors.unpaidText, false)
                 }
 
@@ -105,6 +109,14 @@ struct HomeView: View {
             .overlay(RoundedRectangle(cornerRadius: Theme.Radius.button).strokeBorder(Theme.Colors.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+
+    /// "Retour reçu le 12 oct. · Bonnet trop serré · 2 à arranger".
+    private func returnLabel(_ t: TransactionEntry, since date: Date) -> String {
+        var bits = ["Retour reçu le \(Formatters.shortDate(date))"]
+        if let reason = t.returnReason, !reason.isEmpty { bits.append(reason) }
+        if t.pendingReturnFixes > 0 { bits.append("\(t.pendingReturnFixes) à arranger") }
+        return bits.joined(separator: " · ")
     }
 
     @ViewBuilder

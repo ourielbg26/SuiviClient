@@ -37,6 +37,8 @@ struct TransactionFormDraft {
     var pickupDate: Date?
     var returnDate: Date?
     var pickup2Date: Date?
+    /// Vente en retour : pourquoi la cliente l'a rapportée.
+    var returnReason: String = ""
 
     var note: String = ""
     var photos: [Data] = []
@@ -49,8 +51,8 @@ struct TransactionFormDraft {
     /// Nombre de mensualités (paiement en plusieurs fois).
     var planCount: String = ""
 
-    /// Vente uniquement : acompte versé à la commande (gardé même une fois tout payé).
-    var venteAcompte: String = ""
+    /// Vente ou réparation : acompte versé au départ (gardé même une fois tout payé).
+    var acompte: String = ""
     /// Vente uniquement : le reste a été réglé. Sans objet si l'acompte couvre le prix.
     var venteSoldePaye = false
 
@@ -96,6 +98,25 @@ struct TransactionFormDraft {
         return Decimal(string: normalized, locale: Locale(identifier: "en_US")) ?? 0
     }
 
+    /// Prix saisi et lisible — 0 compris (travail offert, reprise sous garantie…).
+    var hasPrice: Bool {
+        let normalized = price.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)
+        guard let value = Decimal(string: normalized, locale: Locale(identifier: "en_US")) else { return false }
+        return value >= 0
+    }
+
+    /// Raison du retour à enregistrer : seulement s'il y a un retour, nil si vide.
+    var returnDateReason: String? {
+        let text = returnReason.trimmingCharacters(in: .whitespacesAndNewlines)
+        return returnDate == nil || text.isEmpty ? nil : text
+    }
+
+    /// Réparation pas encore payée (ou payée, pour garder la trace) avec un acompte —
+    /// pas en plusieurs fois, où "Déjà versé" joue ce rôle.
+    var hasRepairDeposit: Bool {
+        category == .reparation && pay != .plusieursFois && acompteValue > 0
+    }
+
     /// Moyen de paiement enregistré : pour une vente, celui choisi avec les mensualités
     /// (la vente n'a plus de choix "Réglé en" séparé).
     var paymentMethod: PayMethod { category == .vente ? planMethod : method }
@@ -107,14 +128,14 @@ struct TransactionFormDraft {
     }
 
     /// Acompte saisi (Vente), converti en Decimal (0 si invalide).
-    var venteAcompteValue: Decimal {
-        let normalized = venteAcompte.replacingOccurrences(of: ",", with: ".")
+    var acompteValue: Decimal {
+        let normalized = acompte.replacingOccurrences(of: ",", with: ".")
         return Decimal(string: normalized, locale: Locale(identifier: "en_US")) ?? 0
     }
 
-    /// Bouton d'enregistrement actif : nom + prix + donnée clé de la catégorie.
+    /// Bouton d'enregistrement actif : nom + prix (0 accepté) + donnée clé de la catégorie.
     var isReady: Bool {
-        guard !name.trimmingCharacters(in: .whitespaces).isEmpty, priceValue > 0 else { return false }
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty, hasPrice else { return false }
         switch category {
         case .reparation: return !reparations.isEmpty
         case .couleur: return !couleur.isEmpty || !typeCouleur.isEmpty
@@ -140,6 +161,7 @@ struct TransactionFormDraft {
         f.status = t.status
         f.pickupDate = t.pickupDate
         f.returnDate = t.returnDate
+        f.returnReason = t.returnReason ?? ""
         f.pickup2Date = t.pickup2Date
         f.note = t.note
         f.method = t.method
@@ -156,7 +178,10 @@ struct TransactionFormDraft {
         }
         if t.category == .vente {
             f.planMethod = t.plan?.method ?? (PayMethod.installmentChoices.contains(t.method) ? t.method : .especes)
-            f.venteAcompte = t.depositAmount.map { "\($0)" } ?? ""
+            f.acompte = t.depositAmount.map { "\($0)" } ?? ""
+        }
+        if t.category == .reparation {
+            f.acompte = t.deposit.map { "\($0)" } ?? ""
             f.venteSoldePaye = t.isPaid
         }
 

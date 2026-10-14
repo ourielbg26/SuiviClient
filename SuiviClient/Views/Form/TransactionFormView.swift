@@ -364,11 +364,20 @@ struct TransactionFormView: View {
                         if draft.status == .retour {
                             dateRow("Retour reçu le", binding: dateBinding(\.returnDate))
                             dateRow("Récupéré après retour", binding: dateBinding(\.pickup2Date))
+                            if draft.category == .vente {
+                                TextField("Raison du retour", text: $draft.returnReason, axis: .vertical)
+                                    .font(AppFont.montserrat(14))
+                                    .lineLimit(1...4)
+                                    .padding(12)
+                                    .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.card))
+                                    .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
+                            }
                         }
                         if draft.returnDate != nil {
                             Button("Annuler le retour et effacer la date") {
                                 draft.returnDate = nil
                                 draft.pickup2Date = nil
+                                draft.returnReason = ""
                                 draft.status = .rendu
                             }
                             .font(AppFont.montserrat(12, weight: .semibold))
@@ -388,6 +397,10 @@ struct TransactionFormView: View {
                         draft.pay = TransactionFormDraft.PayChoice(rawValue: $0) ?? .pasEncore
                     }
 
+                    if draft.pay == .pasEncore && draft.category == .reparation {
+                        acompteField
+                    }
+
                     if draft.pay == .paye {
                         payMethodGroup
                     }
@@ -403,22 +416,9 @@ struct TransactionFormView: View {
     /// Vente : "Acompte reçu" (gardé même une fois tout payé), puis — s'il ne couvre pas le
     /// prix — si le reste a déjà été réglé ou non.
     private var venteAcompteSection: some View {
-        let reste = draft.priceValue - draft.venteAcompteValue
+        let reste = draft.priceValue - draft.acompteValue
         return VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Acompte reçu (₪)").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
-                TextField("0", text: $draft.venteAcompte)
-                    .keyboardType(.numberPad)
-                    .font(AppFont.montserrat(14))
-                    .padding(12)
-                    .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.background))
-                    .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
-                if draft.venteAcompteValue > 0 {
-                    Text(reste > 0 ? "Reste après l'acompte : \(Formatters.money(reste))" : "L'acompte couvre tout le prix.")
-                        .font(AppFont.montserrat(11))
-                        .foregroundStyle(Theme.Colors.textSecondary)
-                }
-            }
+            acompteField
 
             if reste > 0 {
                 optionGroup("Le reste", options: ["Pas encore payé", "Payé"], selected: draft.venteSoldePaye ? "Payé" : "Pas encore payé") {
@@ -427,7 +427,26 @@ struct TransactionFormView: View {
             }
 
             // Le moyen choisi ici (espèces / carte) vaut pour toute la vente.
-            installmentFields(alreadyPaid: draft.venteAcompteValue, showsAlreadyPaid: false)
+            installmentFields(alreadyPaid: draft.acompteValue, showsAlreadyPaid: false)
+        }
+    }
+
+    /// "Acompte reçu" et ce qu'il reste à payer après (vente, et réparation pas encore payée).
+    private var acompteField: some View {
+        let reste = draft.priceValue - draft.acompteValue
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("Acompte reçu (₪)").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+            TextField("0", text: $draft.acompte)
+                .keyboardType(.numberPad)
+                .font(AppFont.montserrat(14))
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.background))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(Theme.Colors.border, lineWidth: 1))
+            if draft.acompteValue > 0 {
+                Text(reste > 0 ? "Reste après l'acompte : \(Formatters.money(reste))" : "L'acompte couvre tout le prix.")
+                    .font(AppFont.montserrat(11))
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
         }
     }
 

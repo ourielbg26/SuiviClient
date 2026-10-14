@@ -79,12 +79,17 @@ enum DriveBridge {
         _ = try await post(action: "uploadPhoto", bodyData: try JSONSerialization.data(withJSONObject: payload))
     }
 
-    /// Quand la photo n'est pas (encore) sur Drive, le script répond par un message
-    /// d'erreur au lieu de l'image : on ne garde que ce qui commence comme un JPEG.
+    /// Le script renvoie la photo en base64 dans du JSON (`dataBase64`), ou un message
+    /// d'erreur si elle n'est pas (encore) sur Drive : on ne garde que ce qui est bien un
+    /// JPEG.
     static func downloadPhoto(name: String) async throws -> Data {
         let data = try await get(action: "downloadPhoto", extra: [URLQueryItem(name: "name", value: name)])
-        guard data.starts(with: [0xFF, 0xD8]) else { throw DriveError.badResponse }
-        return data
+        let photo = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])
+            .flatMap { $0["dataBase64"] as? String }
+            .flatMap { Data(base64Encoded: $0) }
+            ?? data
+        guard photo.starts(with: [0xFF, 0xD8]) else { throw DriveError.badResponse }
+        return photo
     }
 
     static func deletePhotos(transactionID: UUID) async throws {

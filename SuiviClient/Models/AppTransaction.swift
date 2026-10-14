@@ -16,7 +16,7 @@ struct AppTransaction: Identifiable, Codable, Hashable {
     var isPaid: Bool
     var method: PayMethod
     var plan: Installments?
-    /// Vente : acompte versé à la commande. Gardé une fois la vente payée en totalité,
+    /// Vente ou réparation : acompte versé au départ. Gardé une fois payée en totalité,
     /// pour garder la trace de ce que la cliente a donné au départ.
     var deposit: Decimal?
     var status: WorkStatus
@@ -24,6 +24,8 @@ struct AppTransaction: Identifiable, Codable, Hashable {
     var pickupDate: Date?
     var returnDate: Date?
     var pickup2Date: Date?
+    /// Vente revenue en retour : pourquoi la cliente l'a rapportée.
+    var returnReason: String?
     var note: String
     /// Dernière modification de la note — absente des fiches dont la note n'a pas été
     /// touchée depuis l'ajout de ce champ.
@@ -38,6 +40,19 @@ struct AppTransaction: Identifiable, Codable, Hashable {
         get { photos ?? [] }
         set { photos = newValue.isEmpty ? nil : newValue }
     }
+
+    /// Retour : ce qu'il y a à arranger. Absent des fiches qui n'en ont jamais eu — passer
+    /// par `returnFixes`.
+    private var fixes: [ReturnFix]?
+
+    /// Choses à arranger après un retour, dans l'ordre où elles ont été notées.
+    var returnFixes: [ReturnFix] {
+        get { fixes ?? [] }
+        set { fixes = newValue.isEmpty ? nil : newValue }
+    }
+
+    /// Nombre de choses du retour pas encore arrangées.
+    var pendingReturnFixes: Int { returnFixes.filter { !$0.done }.count }
 
     init(
         id: UUID = UUID(),
@@ -101,11 +116,22 @@ struct AppTransaction: Identifiable, Codable, Hashable {
 
     var isOld: Bool { ageDays > 14 }
 
+    /// Vente revenue en retour : elle se retravaille, donc elle compte avec les "En cours"
+    /// (et plus avec les "Prêt à rendre") tant qu'elle est en retour.
+    var isVenteBackInWork: Bool { category == .vente && status == .retour }
+
     /// Acompte d'une vente — pour les ventes enregistrées avant le champ `deposit`, le
     /// montant déjà versé de l'échéancier, s'il y en a un.
     var depositAmount: Decimal? {
+        if category == .reparation { return deposit }
         guard category == .vente else { return nil }
         return deposit ?? plan?.paid
+    }
+
+    /// Réparation pas encore payée avec un acompte (sans échéancier) : ce qu'il reste à payer.
+    var leftAfterDeposit: Decimal? {
+        guard !isPaid, plan == nil, let deposit, deposit > 0 else { return nil }
+        return price - deposit
     }
 
     // MARK: Paiement en plusieurs fois
@@ -182,4 +208,11 @@ struct AppTransaction: Identifiable, Codable, Hashable {
         case .rendu: return isPaid ? (Theme.Colors.paidBg, Theme.Colors.paidText) : (Theme.Colors.lateAlert, .white)
         }
     }
+}
+
+/// Une chose à arranger sur un retour (ex. "Recoudre la dentelle").
+struct ReturnFix: Codable, Hashable, Identifiable {
+    var id = UUID()
+    var text: String
+    var done = false
 }

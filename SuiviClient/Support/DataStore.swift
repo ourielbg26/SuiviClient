@@ -183,20 +183,25 @@ final class DataStore {
         let name = draft.name.trimmingCharacters(in: .whitespaces)
         let phone = draft.phone.trimmingCharacters(in: .whitespaces).isEmpty ? "—" : draft.phone
         let (isPaid, plan): (Bool, Installments?)
-        let deposit: Decimal? = draft.category == .vente && draft.venteAcompteValue > 0 ? draft.venteAcompteValue : nil
-        if draft.category == .vente {
-            let reste = draft.priceValue - draft.venteAcompteValue
+        let deposit: Decimal? = (draft.category == .vente && draft.acompteValue > 0) || draft.hasRepairDeposit ? draft.acompteValue : nil
+        if draft.priceValue == 0 {
+            // Rien à payer : la fiche ne doit pas apparaître dans "Non payé".
+            (isPaid, plan) = (true, nil)
+        } else if draft.category == .vente {
+            let reste = draft.priceValue - draft.acompteValue
             if reste <= 0 || draft.venteSoldePaye {
                 (isPaid, plan) = (true, nil)
-            } else if draft.venteAcompteValue > 0 || draft.planCountValue != nil {
-                (isPaid, plan) = (false, Installments(paid: draft.venteAcompteValue, due: draft.planDue, method: draft.planMethod, count: draft.planCountValue))
+            } else if draft.acompteValue > 0 || draft.planCountValue != nil {
+                (isPaid, plan) = (false, Installments(paid: draft.acompteValue, due: draft.planDue, method: draft.planMethod, count: draft.planCountValue))
             } else {
                 (isPaid, plan) = (false, nil)
             }
         } else if draft.pay == .plusieursFois && draft.category.allowsInstallments {
             (isPaid, plan) = (false, Installments(paid: Decimal(string: draft.planPaid) ?? 0, due: draft.planDue, method: draft.planMethod, count: draft.planCountValue))
         } else {
-            (isPaid, plan) = (draft.pay == .paye, nil)
+            // Un acompte qui couvre tout le prix vaut paiement.
+            let depositCoversPrice = draft.hasRepairDeposit && draft.acompteValue >= draft.priceValue
+            (isPaid, plan) = (draft.pay == .paye || depositCoversPrice, nil)
         }
 
         if let editing, var client = client(id: editing.clientID),
@@ -221,6 +226,7 @@ final class DataStore {
             t.dropDate = draft.dropDate
             t.pickupDate = draft.pickupDate
             t.returnDate = draft.returnDate
+            t.returnReason = draft.returnDateReason
             t.pickup2Date = draft.pickup2Date
             if t.note != draft.note {
                 t.note = draft.note
@@ -255,6 +261,7 @@ final class DataStore {
             note: draft.note
         )
         newTransaction.deposit = deposit
+        newTransaction.returnReason = draft.returnDateReason
         if !draft.note.isEmpty { newTransaction.noteUpdatedAt = .now }
         let newPhotos = stagePhotos(draft.photos, in: &newTransaction, kind: PhotoKind(for: draft.category))
         target.phone = phone
@@ -272,7 +279,7 @@ final class DataStore {
 
     /// Règles de dates §6.3 : Rendu → remplit "Rendu le" (et "Récupéré après retour" si ça
     /// revenait d'un retour) ; Retour → remplit "Retour le" et vide "Récupéré après retour".
-    func setStatus(clientID: UUID, transactionID: UUID, to newStatus: WorkStatus) {
+    func setStatus(clientID: UUID, transactionID: UUID, to newStatus: WorkStatus, returnReason: String? = nil) {
         updateTransaction(clientID: clientID, transactionID: transactionID) { t in
             if newStatus == .rendu {
                 if t.pickupDate == nil {
@@ -284,6 +291,7 @@ final class DataStore {
             if newStatus == .retour {
                 t.returnDate = .now
                 t.pickup2Date = nil
+                if let returnReason { t.returnReason = returnReason }
             }
             t.status = newStatus
         }
@@ -295,6 +303,29 @@ final class DataStore {
         updateTransaction(clientID: clientID, transactionID: transactionID) { t in
             t.note = note
             t.noteUpdatedAt = .now
+        }
+    }
+
+    // MARK: Retour : choses à arranger
+
+    func addReturnFix(clientID: UUID, transactionID: UUID, text: String) {
+        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            t.returnFixes.append(ReturnFix(text: text))
+        }
+    }
+
+    func toggleReturnFix(clientID: UUID, transactionID: UUID, fixID: UUID) {
+        updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            guard let idx = t.returnFixes.firstIndex(where: { $0.id == fixID }) else { return }
+            t.returnFixes[idx].done.toggle()
+        }
+    }
+
+    func deleteReturnFix(clientID: UUID, transactionID: UUID, fixID: UUID) {
+        updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            t.returnFixes.removeAll { $0.id == fixID }
         }
     }
 

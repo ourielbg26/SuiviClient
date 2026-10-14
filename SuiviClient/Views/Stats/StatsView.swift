@@ -48,7 +48,10 @@ struct StatsView: View {
 
     private var scopeTotal: Decimal { sum(scope) }
     private var scopePaid: Decimal { sum(scope.filter(\.isPaid)) }
-    private var scopePlanPaid: Decimal { scope.filter { $0.plan != nil && !$0.isPaid }.reduce(0) { $0 + ($1.planReceived ?? 0) } }
+    /// Déjà reçu sur ce qui n'est pas encore payé : échéancier en cours, ou acompte.
+    private var scopePlanPaid: Decimal {
+        scope.filter { !$0.isPaid }.reduce(0) { $0 + ($1.planReceived ?? ($1.leftAfterDeposit != nil ? $1.deposit ?? 0 : 0)) }
+    }
     private var encaisse: Decimal { scopePaid + scopePlanPaid }
     private var enAttente: Decimal { scopeTotal - encaisse }
     private var moyen: Decimal { scope.isEmpty ? 0 : scopeTotal / Decimal(scope.count) }

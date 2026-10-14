@@ -58,7 +58,7 @@ function route(action, params, body) {
     case 'uploadPhoto':
       return json(uploadPhoto(body));
     case 'downloadPhoto':
-      return downloadPhoto(params.name);
+      return json(downloadPhoto(params.name));
     case 'deletePhotos':
       return json(deletePhotos(body.transactionId));
     default:
@@ -250,10 +250,13 @@ function uploadPhoto(body) {
   return { ok: true, name: body.name };
 }
 
+// Une application web Apps Script ne peut pas renvoyer un fichier tel quel (Google
+// répond "type de valeur renvoyée non accepté") : la photo part donc en base64 dans du
+// JSON, comme à l'envoi.
 function downloadPhoto(name) {
   var f = findFile(photosFolder(), name);
-  if (!f) return json({ error: 'not found' });
-  return f.getBlob();
+  if (!f) return { error: 'not found' };
+  return { name: name, dataBase64: Utilities.base64Encode(f.getBlob().getBytes()) };
 }
 
 function deletePhotos(transactionId) {
@@ -354,6 +357,7 @@ function ficheNumber(ref) {
 
 // Même règle que l'app (`AppTransaction.depositAmount`).
 function depositAmount(t) {
+  if (t.category === 'Réparation') return t.deposit != null ? Number(t.deposit) : '';
   if (t.category !== 'Vente') return '';
   if (t.deposit != null) return Number(t.deposit);
   return t.plan ? Number(t.plan.paid) : '';

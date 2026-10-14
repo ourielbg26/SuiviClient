@@ -7,6 +7,8 @@ struct TransactionDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.goHome) private var goHome
     @State private var askDelete = false
+    /// Vente passée en retour : la feuille "Raison du retour" est ouverte.
+    @State private var askReturnReason = false
 
     private var transaction: TransactionEntry? {
         store.entry(clientID: clientID, transactionID: transactionID)
@@ -62,6 +64,11 @@ struct TransactionDetailView: View {
                 VStack(spacing: 12) {
                     hero(transaction)
                     suivi(transaction)
+                    if transaction.returnDate != nil {
+                        card {
+                            ReturnFixesSection(clientID: clientID, transaction: transaction.transaction)
+                        }
+                    }
                     details(transaction)
                     paiement(transaction)
                     card {
@@ -87,6 +94,13 @@ struct TransactionDetailView: View {
         }
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $askReturnReason) {
+            ReturnReasonSheet { reason in
+                store.setStatus(clientID: clientID, transactionID: transactionID, to: .retour, returnReason: reason)
+                goHome()
+            }
+            .presentationDetents([.medium])
+        }
     }
 
     private func hero(_ transaction: TransactionEntry) -> some View {
@@ -202,6 +216,12 @@ struct TransactionDetailView: View {
     }
 
     private func setStatus(_ new: WorkStatus) {
+        // Retour d'une vente : on attend la raison et "Enregistrer le retour" avant de
+        // changer quoi que ce soit et de revenir à l'Accueil.
+        if new == .retour, transaction?.category == .vente {
+            askReturnReason = true
+            return
+        }
         store.setStatus(clientID: clientID, transactionID: transactionID, to: new)
         goHome()
     }
@@ -219,6 +239,9 @@ struct TransactionDetailView: View {
                 }
                 if let ret = transaction.returnDate {
                     detailRow("Retour le", Formatters.shortDate(ret), color: Theme.Colors.unpaidText)
+                    if let reason = transaction.returnReason, !reason.isEmpty {
+                        detailRow("Raison du retour", reason, color: Theme.Colors.unpaidText)
+                    }
                     detailRow("Récupéré (2ᵉ fois)", transaction.pickup2Date.map(Formatters.shortDate) ?? "en attente", color: transaction.pickup2Date == nil ? Theme.Colors.unpaidText : nil)
                 }
                 detailRow("Référence", transaction.ficheLabel, showDivider: false)
@@ -259,6 +282,14 @@ struct TransactionDetailView: View {
                         if transaction.price > deposit {
                             planRow("Solde réglé ensuite", Formatters.money(transaction.price - deposit), color: Theme.Colors.textPrimary)
                         }
+                    }
+                    .padding(14)
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.innerTile).fill(Theme.Colors.secondaryBackground))
+                }
+                if let left = transaction.leftAfterDeposit, let deposit = transaction.deposit {
+                    VStack(spacing: 8) {
+                        planRow("Acompte versé", Formatters.money(deposit), color: Theme.Colors.textPrimary)
+                        planRow("Reste à payer", Formatters.money(left), bold: true, color: Theme.Colors.textPrimary)
                     }
                     .padding(14)
                     .background(RoundedRectangle(cornerRadius: Theme.Radius.innerTile).fill(Theme.Colors.secondaryBackground))
@@ -454,6 +485,139 @@ private struct NoteEditor: View {
     private func save() {
         store.updateNote(clientID: clientID, transactionID: transactionID, note: text)
         focused = false
+    }
+}
+
+/// Vente rapportée par la cliente : on note pourquoi avant d'enregistrer le retour.
+private struct ReturnReasonSheet: View {
+    let onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var reason = ""
+    @FocusState private var focused: Bool
+
+    private var trimmed: String { reason.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Retour").font(AppFont.display(22, weight: .bold))
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Raison du retour").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+                TextField("Bonnet trop serré, cheveux qui tombent…", text: $reason, axis: .vertical)
+                    .font(AppFont.montserrat(15))
+                    .lineLimit(2...5)
+                    .focused($focused)
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.field).fill(Theme.Colors.background))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.Radius.field).strokeBorder(focused ? Theme.Colors.primaryButton : Theme.Colors.border, lineWidth: 1))
+            }
+            Text("La vente repassera dans « En cours ».")
+                .font(AppFont.montserrat(12))
+                .foregroundStyle(Theme.Colors.textSecondary)
+            Spacer()
+            PrimaryButton(title: "Enregistrer le retour", isEnabled: !trimmed.isEmpty) {
+                guard !trimmed.isEmpty else { return }
+                dismiss()
+                onSave(trimmed)
+            }
+        }
+        .padding(22)
+        .onAppear { focused = true }
+    }
+}
+
+/// Retour : la liste des choses à arranger. On en ajoute en tapant puis "+" (ou
+/// Entrée), on coche quand c'est fait, la croix retire une ligne notée par erreur.
+private struct ReturnFixesSection: View {
+    let clientID: UUID
+    let transaction: AppTransaction
+
+    @Environment(DataStore.self) private var store
+    @State private var newText = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        let fixes = transaction.returnFixes
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("À arranger (retour)").font(AppFont.display(16, weight: .semibold))
+                Spacer()
+                if !fixes.isEmpty {
+                    let pending = transaction.pendingReturnFixes
+                    Text(pending == 0 ? "Tout est arrangé" : "\(fixes.count - pending)/\(fixes.count) fait")
+                        .font(AppFont.montserrat(12, weight: .semibold))
+                        .foregroundStyle(pending == 0 ? Theme.Colors.paidText : Theme.Colors.unpaidText)
+                }
+            }
+            if !fixes.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(fixes) { fix in
+                        HStack(spacing: 10) {
+                            Button {
+                                store.toggleReturnFix(clientID: clientID, transactionID: transaction.id, fixID: fix.id)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: fix.done ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(fix.done ? Theme.Colors.paidText : Theme.Colors.border)
+                                    Text(fix.text)
+                                        .font(AppFont.montserrat(14, weight: .medium))
+                                        .strikethrough(fix.done)
+                                        .foregroundStyle(fix.done ? Theme.Colors.textSecondary : Theme.Colors.textPrimary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .multilineTextAlignment(.leading)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            Button {
+                                store.deleteReturnFix(clientID: clientID, transactionID: transaction.id, fixID: fix.id)
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Theme.Colors.textSecondary)
+                                    .frame(width: 28, height: 28)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.vertical, 7)
+                    }
+                }
+            }
+            HStack(spacing: 8) {
+                TextField("Ajouter une chose à arranger…", text: $newText, axis: .vertical)
+                    .font(AppFont.montserrat(14))
+                    .lineLimit(1...3)
+                    .focused($focused)
+                    .submitLabel(.done)
+                    .onSubmit(add)
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: Theme.Radius.innerTile).fill(Theme.Colors.background))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.innerTile)
+                            .strokeBorder(focused ? Theme.Colors.primaryButton : Theme.Colors.border, lineWidth: 1)
+                    )
+                Button(action: add) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.innerTile).fill(isEmpty ? Theme.Colors.secondaryBackground : Theme.Colors.primaryButton))
+                        .foregroundStyle(isEmpty ? Theme.Colors.textSecondary : .white)
+                }
+                .buttonStyle(.plain)
+                .disabled(isEmpty)
+            }
+        }
+        // En quittant la fiche avec une ligne tapée mais pas ajoutée, on la garde.
+        .onDisappear(perform: add)
+    }
+
+    private var isEmpty: Bool { newText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    private func add() {
+        guard !isEmpty else { return }
+        store.addReturnFix(clientID: clientID, transactionID: transaction.id, text: newText)
+        newText = ""
     }
 }
 
