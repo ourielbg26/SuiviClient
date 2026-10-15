@@ -101,6 +101,10 @@ enum DriveBridge {
         return photo
     }
 
+    static func deletePhoto(name: String) async throws {
+        _ = try await post(action: "deletePhoto", bodyData: try JSONSerialization.data(withJSONObject: ["name": name]))
+    }
+
     static func deletePhotos(transactionID: UUID) async throws {
         _ = try await post(action: "deletePhotos", bodyData: try JSONSerialization.data(withJSONObject: ["transactionId": transactionID.uuidString]))
     }

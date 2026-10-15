@@ -77,13 +77,7 @@ struct TransactionDetailView: View {
                     }
                     if [.reparation, .couleur, .vente].contains(transaction.category) {
                         card {
-                            PersistedPhotoGridSection(
-                                title: transaction.category == .vente ? "Photos après" : "Photo avant",
-                                addLabel: transaction.category == .vente ? "Après" : "Avant",
-                                clientID: transaction.clientID,
-                                transactionID: transaction.id,
-                                kind: transaction.category == .vente ? .apres : .avant
-                            )
+                            BeforeAfterPhotosSection(clientID: transaction.clientID, transactionID: transaction.id)
                         }
                     }
                     deleteSection(transaction)

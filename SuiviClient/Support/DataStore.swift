@@ -565,13 +565,31 @@ final class DataStore {
         "\(transactionID.uuidString)_\(kind.rawValue)_"
     }
 
+    /// "<id>_avant_3_1a2b3c.jpg" : le petit code au bout évite de réutiliser le nom d'une
+    /// photo supprimée (l'autre iPhone pourrait encore l'avoir en mémoire).
     private func nextPhotoName(in transaction: AppTransaction, kind: PhotoKind) -> String {
         let prefix = Self.photoPrefix(transaction.id, kind)
         let indices = transaction.photoNames.compactMap { name -> Int? in
             guard name.hasPrefix(prefix) else { return nil }
             return Int(name.dropFirst(prefix.count).prefix { $0.isNumber })
         }
-        return "\(prefix)\((indices.max() ?? 0) + 1).jpg"
+        let code = UUID().uuidString.prefix(6).lowercased()
+        return "\(prefix)\((indices.max() ?? 0) + 1)_\(code).jpg"
+    }
+
+    /// Supprime une photo de la fiche (visionneuse ou poubelle de la vignette) : retirée
+    /// de la fiche tout de suite, puis mise à la corbeille sur Drive.
+    func deletePhoto(name: String, clientID: UUID, transactionID: UUID) {
+        updateTransaction(clientID: clientID, transactionID: transactionID) { t in
+            t.photoNames.removeAll { $0 == name }
+        }
+        if pendingPhotoNames.contains(name) {
+            fileStore.removePendingPhoto(name: name)
+            pendingPhotoNames.remove(name)
+        }
+        downloadedPhotos.removeObject(forKey: name as NSString)
+        guard DriveConfig.isConfigured else { return }
+        Task { @MainActor in try? await DriveBridge.deletePhoto(name: name) }
     }
 
     private func removePhotos(transactionID: UUID) {
