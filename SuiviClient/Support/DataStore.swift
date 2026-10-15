@@ -586,11 +586,13 @@ final class DataStore {
 
     /// Charge une photo pour l'affichage : pas encore envoyée (sur le téléphone) → déjà
     /// téléchargée pendant cette session → téléchargement Drive. `nil` si le
-    /// téléchargement a échoué (hors ligne, photo pas encore arrivée sur Drive…).
-    func loadPhotoData(name: String) async -> Data? {
+    /// téléchargement a échoué (hors ligne, photo pas encore arrivée sur Drive…) — l'erreur
+    /// dit pourquoi.
+    func loadPhotoData(name: String) async throws -> Data {
         if let pending = fileStore.pendingPhotoData(name: name) { return pending }
         if let downloaded = downloadedPhotos.object(forKey: name as NSString) { return downloaded as Data }
-        guard DriveConfig.isConfigured, let data = try? await DriveBridge.downloadPhoto(name: name) else { return nil }
+        guard DriveConfig.isConfigured else { throw DriveError.notConfigured }
+        let data = try await DriveBridge.downloadPhoto(name: name)
         downloadedPhotos.setObject(data as NSData, forKey: name as NSString)
         return data
     }

@@ -1,8 +1,18 @@
 import Foundation
 
-enum DriveError: Error {
+enum DriveError: LocalizedError {
     case notConfigured
     case badResponse
+    /// Message d'erreur renvoyé par le script (ex. "not found").
+    case script(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .notConfigured: return "Drive n'est pas configuré."
+        case .badResponse: return "Réponse inattendue de Google."
+        case .script(let message): return message == "not found" ? "Photo introuvable sur Drive." : "Erreur du script : \(message)"
+        }
+    }
 }
 
 /// Client réseau vers le script Google Apps Script — le seul endroit qui parle à Drive.
@@ -84,10 +94,9 @@ enum DriveBridge {
     /// JPEG.
     static func downloadPhoto(name: String) async throws -> Data {
         let data = try await get(action: "downloadPhoto", extra: [URLQueryItem(name: "name", value: name)])
-        let photo = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])
-            .flatMap { $0["dataBase64"] as? String }
-            .flatMap { Data(base64Encoded: $0) }
-            ?? data
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        if let message = json?["error"] as? String { throw DriveError.script(message) }
+        let photo = (json?["dataBase64"] as? String).flatMap { Data(base64Encoded: $0) } ?? data
         guard photo.starts(with: [0xFF, 0xD8]) else { throw DriveError.badResponse }
         return photo
     }

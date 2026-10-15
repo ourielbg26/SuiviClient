@@ -40,7 +40,7 @@ struct PhotoGridSection: View {
 
     private func photoTile(data: Data) -> some View {
         Group {
-            if let ui = UIImage(data: data) {
+            if let ui = ImageCompressor.displayImage(from: data) {
                 Image(uiImage: ui).resizable().scaledToFill()
             } else {
                 Rectangle().fill(Theme.Colors.photoStripeA)
@@ -133,7 +133,7 @@ private struct RemotePhotoTile: View {
     private enum LoadState {
         case loading
         case loaded(UIImage)
-        case failed
+        case failed(String)
     }
 
     @State private var state: LoadState = .loading
@@ -152,7 +152,7 @@ private struct RemotePhotoTile: View {
                 }
             case .loaded(let image):
                 Image(uiImage: image).resizable().scaledToFill()
-            case .failed:
+            case .failed(let reason):
                 VStack(spacing: 10) {
                     Image(systemName: "exclamationmark.icloud")
                         .font(.system(size: 22))
@@ -161,6 +161,11 @@ private struct RemotePhotoTile: View {
                         .font(AppFont.montserrat(11))
                         .foregroundStyle(Theme.Colors.textSecondary)
                         .multilineTextAlignment(.center)
+                    Text(reason)
+                        .font(AppFont.montserrat(9))
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
                     Button {
                         attempt += 1
                     } label: {
@@ -192,10 +197,18 @@ private struct RemotePhotoTile: View {
         }
         .task(id: "\(name)#\(attempt)") {
             state = .loading
-            if let data = await store.loadPhotoData(name: name), let image = UIImage(data: data) {
-                state = .loaded(image)
-            } else {
-                state = .failed
+            do {
+                let data = try await store.loadPhotoData(name: name)
+                guard !Task.isCancelled else { return }
+                if let image = ImageCompressor.displayImage(from: data) {
+                    state = .loaded(image)
+                } else {
+                    state = .failed("Photo illisible (\(data.count / 1024) Ko reçus).")
+                }
+            } catch {
+                // Vignette sortie de l'écran pendant le téléchargement : rien à afficher.
+                guard !Task.isCancelled else { return }
+                state = .failed(error.localizedDescription)
             }
         }
     }

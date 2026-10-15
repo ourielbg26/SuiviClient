@@ -11,6 +11,9 @@
 var FOLDER_ID = '1UCzMyRq1BvCr3QEKDLVAXPsSCbdRzG-g';
 var SECRET = 'ZlwXB5TyT0ivTI_IG9-0_NbFtcWjArU5Rtlvowl-m4U';
 
+// À changer à chaque modification du script (voir l'action 'version').
+var SCRIPT_VERSION = 'photos-base64 · 2026-10-15';
+
 function doGet(e) { return handle(e); }
 function doPost(e) { return handle(e); }
 
@@ -59,6 +62,9 @@ function route(action, params, body) {
       return json(uploadPhoto(body));
     case 'downloadPhoto':
       return json(downloadPhoto(params.name));
+    case 'version':
+      // Pour vérifier depuis un navigateur que c'est bien ce code-là qui est déployé.
+      return json({ version: SCRIPT_VERSION });
     case 'deletePhotos':
       return json(deletePhotos(body.transactionId));
     default:
