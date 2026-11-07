@@ -7,6 +7,8 @@ struct TransactionDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.goHome) private var goHome
     @State private var askDelete = false
+    /// "Marquer comme payé" : la feuille du moyen de paiement est ouverte.
+    @State private var askPayMethod = false
     /// Vente passée en retour : la feuille "Raison du retour" est ouverte.
     @State private var askReturnReason = false
 
@@ -88,6 +90,13 @@ struct TransactionDetailView: View {
         }
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $askPayMethod) {
+            PayMethodSheet(left: transaction.leftAfterDeposit ?? transaction.price) { method in
+                store.markPaid(clientID: clientID, transactionID: transactionID, method: method)
+                goHome()
+            }
+            .presentationDetents([.height(340)])
+        }
         .sheet(isPresented: $askReturnReason) {
             ReturnReasonSheet { reason in
                 store.setStatus(clientID: clientID, transactionID: transactionID, to: .retour, returnReason: reason)
@@ -314,8 +323,13 @@ struct TransactionDetailView: View {
                 }
                 if !transaction.isPaid {
                     PrimaryButton(title: "Marquer comme payé") {
-                        store.markPaid(clientID: clientID, transactionID: transactionID)
-                        goHome()
+                        if transaction.plan != nil {
+                            // Plusieurs fois : le moyen est déjà connu.
+                            store.markPaid(clientID: clientID, transactionID: transactionID, method: nil)
+                            goHome()
+                        } else {
+                            askPayMethod = true
+                        }
                     }
                 }
             }
@@ -479,6 +493,43 @@ private struct NoteEditor: View {
     private func save() {
         store.updateNote(clientID: clientID, transactionID: transactionID, note: text)
         focused = false
+    }
+}
+
+/// "Marquer comme payé" : on choisit comment le reste a été réglé avant d'enregistrer.
+private struct PayMethodSheet: View {
+    let left: Decimal
+    /// Aucun moyen pré-choisi : une fiche pas encore payée porte "Espèces" par défaut, ce
+    /// qui ne dit rien de la façon dont elle a été réglée.
+    let onSave: (PayMethod) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var method: PayMethod?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("Marquer comme payé").font(AppFont.display(22, weight: .bold))
+            HStack {
+                Text("Reste à payer").font(AppFont.montserrat(13)).foregroundStyle(Theme.Colors.textSecondary)
+                Spacer()
+                Text(Formatters.money(left)).font(AppFont.montserrat(15, weight: .bold))
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Réglé en").font(AppFont.montserrat(12, weight: .medium)).foregroundStyle(Theme.Colors.textSecondary)
+                FlowLayout(spacing: 7) {
+                    ForEach(PayMethod.choices) { m in
+                        ChipButton(label: m.label, isActive: method == m) { method = m }
+                    }
+                }
+            }
+            Spacer()
+            PrimaryButton(title: "Marquer comme payé", isEnabled: method != nil) {
+                guard let method else { return }
+                dismiss()
+                onSave(method)
+            }
+        }
+        .padding(22)
     }
 }
 

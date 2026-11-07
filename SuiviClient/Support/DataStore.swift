@@ -367,9 +367,12 @@ final class DataStore {
         }
     }
 
-    func markPaid(clientID: UUID, transactionID: UUID) {
+    /// "Marquer comme payé" : `method` = comment le reste a été réglé (nil pour un
+    /// paiement en plusieurs fois, qui a déjà son moyen).
+    func markPaid(clientID: UUID, transactionID: UUID, method: PayMethod?) {
         updateTransaction(clientID: clientID, transactionID: transactionID) { t in
             t.deposit = t.depositAmount
+            if let method { t.method = method }
             t.isPaid = true
         }
     }
