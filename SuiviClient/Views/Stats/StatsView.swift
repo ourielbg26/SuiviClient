@@ -46,14 +46,44 @@ struct StatsView: View {
 
     private func sum(_ items: [TransactionEntry]) -> Decimal { items.reduce(0) { $0 + $1.price } }
 
-    private var scopeTotal: Decimal { sum(scope) }
-    private var scopePaid: Decimal { sum(scope.filter(\.isPaid)) }
-    /// Déjà reçu sur ce qui n'est pas encore payé : échéancier en cours, ou acompte.
-    private var scopePlanPaid: Decimal {
-        scope.filter { !$0.isPaid }.reduce(0) { $0 + ($1.planReceived ?? ($1.leftAfterDeposit != nil ? $1.deposit ?? 0 : 0)) }
+    /// Dates prises en compte pour l'encaissé. Les mois à venir ne comptent pas (une
+    /// mensualité de carte du mois prochain n'est pas encore là), sauf pour une période
+    /// choisie à la main.
+    private var cashInterval: DateInterval {
+        let cal = Calendar.current
+        let now = Date.now
+        let endOfMonth = cal.dateInterval(of: .month, for: now)?.end ?? now
+        let interval: DateInterval
+        switch period {
+        case .ceMois:
+            return cal.dateInterval(of: .month, for: now) ?? DateInterval(start: now, end: now)
+        case .troisMois:
+            interval = DateInterval(start: cal.startOfDay(for: cal.date(byAdding: .day, value: -92, to: now) ?? now), end: endOfMonth)
+        case .cetteAnnee:
+            interval = DateInterval(start: cal.dateInterval(of: .year, for: now)?.start ?? now, end: endOfMonth)
+        case .depuisToujours:
+            interval = DateInterval(start: .distantPast, end: endOfMonth)
+        case .periode:
+            let start = cal.startOfDay(for: min(pFrom, pTo))
+            let end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: max(pFrom, pTo))) ?? start
+            interval = DateInterval(start: start, end: end)
+        }
+        return interval
     }
-    private var encaisse: Decimal { scopePaid + scopePlanPaid }
-    private var enAttente: Decimal { scopeTotal - encaisse }
+
+    private var scopeTotal: Decimal { sum(scope) }
+    /// Argent arrivé pendant la période, quelle que soit la date de dépôt de la fiche :
+    /// une vente en 10 mensualités compte une mensualité par mois (voir
+    /// `AppTransaction.payments`).
+    private var encaisse: Decimal {
+        let interval = cashInterval
+        return store.allEntries.reduce(0) { total, e in
+            e.transaction.payments(in: interval).reduce(total) { $0 + $1.amount }
+        }
+    }
+    /// Ce qui reste à recevoir sur les fiches déposées pendant la période (mensualités à
+    /// venir comprises).
+    private var enAttente: Decimal { max(0, scopeTotal - scope.reduce(0) { $0 + $1.transaction.receivedToDate }) }
     private var moyen: Decimal { scope.isEmpty ? 0 : scopeTotal / Decimal(scope.count) }
 
     private var periodLabel: String {
@@ -177,13 +207,25 @@ struct StatsView: View {
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text("\(periodLabel) · encaissé").font(AppFont.montserrat(13, weight: .medium)).foregroundStyle(.white)
-                Text(Formatters.money(encaisse))
-                    .font(AppFont.display(44, weight: .bold))
-                    .tracking(AppTracking.bigNumber)
-                    .foregroundStyle(.white)
+            // Toucher le total ouvre le détail des fiches qui le forment.
+            NavigationLink(value: AppRoute.cashBreakdown(start: cashInterval.start, end: cashInterval.end, title: periodLabel)) {
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("\(periodLabel) · encaissé").font(AppFont.montserrat(13, weight: .medium)).foregroundStyle(.white)
+                        Text(Formatters.money(encaisse))
+                            .font(AppFont.display(44, weight: .bold))
+                            .tracking(AppTracking.bigNumber)
+                            .foregroundStyle(.white)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.bottom, 12)
+                }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
             HStack(spacing: 8) {
                 statTile("En attente", Formatters.money(enAttente))
                 statTile("Travaux", "\(scope.count)")

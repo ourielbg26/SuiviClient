@@ -9,6 +9,7 @@ struct TransactionsListView: View {
     @State private var query = ""
     @State private var showFilters = false
     @State private var fPay: PayFilter = .tous
+    @State private var fMethod: PayMethod?
     @State private var fStatus: WorkStatus?
     @State private var fCategory: Category?
     @State private var fPeriod: PeriodFilter = .tout
@@ -27,6 +28,9 @@ struct TransactionsListView: View {
             case .paye: matchesPay = t.isPaid
             case .impaye: matchesPay = !t.isPaid
             }
+            // Mode de paiement : seulement les fiches où de l'argent a été (ou est) versé
+            // de cette façon — le moyen d'une fiche pas encore payée ne veut rien dire.
+            let matchesMethod = fMethod.map { m in (t.plan?.method ?? t.method) == m && !t.payments.isEmpty } ?? true
             let matchesStatus = fStatus == nil || fStatus == t.status
             let matchesCategory = fCategory == nil || fCategory == t.category
             let matchesPeriod: Bool
@@ -40,7 +44,7 @@ struct TransactionsListView: View {
                 let end = Calendar.current.startOfDay(for: customTo)
                 matchesPeriod = t.dropDate >= start && t.dropDate <= end
             }
-            return matchesQuery && matchesPay && matchesStatus && matchesCategory && matchesPeriod
+            return matchesQuery && matchesPay && matchesMethod && matchesStatus && matchesCategory && matchesPeriod
         }
     }
 
@@ -92,7 +96,7 @@ struct TransactionsListView: View {
                         Text("\(filtered.count) résultat\(filtered.count > 1 ? "s" : "")")
                             .font(AppFont.montserrat(13, weight: .semibold))
                         Spacer()
-                        Text(Formatters.money(total))
+                        Text("\(Formatters.money(total)) facturé")
                             .font(AppFont.montserrat(12))
                             .foregroundStyle(Theme.Colors.textSecondary)
                     }
@@ -134,6 +138,9 @@ struct TransactionsListView: View {
             filterGroup("Paiement", options: PayFilter.allCases.map(\.rawValue), isActive: { $0 == fPay.rawValue }) { label in
                 fPay = PayFilter(rawValue: label) ?? .tous
             }
+            filterGroup("Mode de paiement", options: ["Tous"] + methodChoices.map(\.label), isActive: { $0 == (fMethod?.label ?? "Tous") }) { label in
+                fMethod = methodChoices.first { $0.label == label }
+            }
             filterGroup("Statut du travail", options: ["Tous"] + WorkStatus.allCases.map(\.rawValue), isActive: { $0 == (fStatus?.rawValue ?? "Tous") }) { label in
                 fStatus = WorkStatus(rawValue: label)
             }
@@ -162,7 +169,7 @@ struct TransactionsListView: View {
             }
 
             Button("Réinitialiser") {
-                fPay = .tous; fStatus = nil; fCategory = nil; fPeriod = .tout; query = ""
+                fPay = .tous; fMethod = nil; fStatus = nil; fCategory = nil; fPeriod = .tout; query = ""
             }
             .font(AppFont.montserrat(13, weight: .semibold))
             .foregroundStyle(Theme.Colors.primaryButtonPressed)
@@ -170,6 +177,12 @@ struct TransactionsListView: View {
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 22).fill(Theme.Colors.card))
         .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Theme.Colors.border, lineWidth: 1))
+    }
+
+    /// Moyens proposés aujourd'hui, plus le chèque s'il reste d'anciennes fiches réglées
+    /// par chèque.
+    private var methodChoices: [PayMethod] {
+        PayMethod.choices + (all.contains { ($0.plan?.method ?? $0.method) == .cheque } ? [.cheque] : [])
     }
 
     private func filterGroup(_ label: String, options: [String], isActive: @escaping (String) -> Bool, select: @escaping (String) -> Void) -> some View {

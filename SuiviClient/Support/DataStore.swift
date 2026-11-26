@@ -211,6 +211,7 @@ final class DataStore {
             t.item = draft.itemLabel
             t.origine = draft.category == .vente ? draft.origine : nil
             t.price = draft.priceValue
+            if isPaid != t.isPaid { t.paidAt = isPaid ? .now : nil }
             t.isPaid = isPaid
             t.method = draft.paymentMethod
             // Les paiements en espèces déjà notés restent attachés à l'échelonnement ; une
@@ -373,6 +374,7 @@ final class DataStore {
         updateTransaction(clientID: clientID, transactionID: transactionID) { t in
             t.deposit = t.depositAmount
             if let method { t.method = method }
+            if !t.isPaid { t.paidAt = .now }
             t.isPaid = true
         }
     }

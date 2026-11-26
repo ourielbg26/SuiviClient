@@ -20,5 +20,7 @@ func routeDestination(_ route: AppRoute, path: Binding<[AppRoute]>, store: DataS
         ClientDetailView(clientID: clientID)
     case .newContact:
         NewContactView()
+    case .cashBreakdown(let start, let end, let title):
+        CashBreakdownView(interval: DateInterval(start: start, end: end), title: title)
     }
 }

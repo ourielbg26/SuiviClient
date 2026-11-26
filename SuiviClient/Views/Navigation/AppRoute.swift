@@ -13,4 +13,7 @@ enum AppRoute: Hashable {
     case contacts
     case clientDetail(clientID: UUID)
     case newContact
+    /// Statistiques → détail de l'encaissé : les fiches dont l'argent est arrivé entre
+    /// `start` (compris) et `end` (exclu).
+    case cashBreakdown(start: Date, end: Date, title: String)
 }

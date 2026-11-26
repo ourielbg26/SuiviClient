@@ -5,6 +5,14 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: AppTab = .home
     @State private var homePath: [AppRoute] = []
+    @State private var statsPath: [AppRoute] = []
+
+    /// La liste des transactions (ouverte depuis l'Accueil) et le détail de l'encaissé
+    /// (depuis les Stats) sont des écrans à part entière : pas de barre d'onglets, ni
+    /// sur ce qu'on ouvre depuis eux.
+    private var hidesTabBar: Bool {
+        homePath.contains(.transactionsList) || !statsPath.isEmpty
+    }
     /// Passe à true au bout de quelques secondes : si des données sont déjà en cache sur
     /// le téléphone, on les montre sans attendre la fin de la synchro Drive (qui peut
     /// prendre plus d'une minute) — elle continue en arrière-plan et met l'écran à jour.
@@ -53,8 +61,11 @@ struct RootView: View {
                             }
                     }
                 case .stats:
-                    NavigationStack {
+                    NavigationStack(path: $statsPath) {
                         StatsView()
+                            .navigationDestination(for: AppRoute.self) { route in
+                                routeDestination(route, path: $statsPath, store: store)
+                            }
                     }
                 case .calendar:
                     NavigationStack {
@@ -67,10 +78,15 @@ struct RootView: View {
                 }
             }
 
-            FloatingTabBar(selected: $selectedTab)
+            if !hidesTabBar {
+                FloatingTabBar(selected: $selectedTab)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeOut(duration: 0.2), value: hidesTabBar)
         .environment(\.goHome, GoHomeAction {
             homePath = []
+            statsPath = []
             selectedTab = .home
         })
     }

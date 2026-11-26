@@ -27,6 +27,9 @@ struct AppTransaction: Identifiable, Codable, Hashable {
     /// Vente revenue en retour : pourquoi la cliente l'a rapportée.
     var returnReason: String?
     var note: String
+    /// Jour où la fiche est passée en "Payé" (bouton "Marquer comme payé" ou modification).
+    /// Absent des fiches payées dès leur création et des anciennes fiches.
+    var paidAt: Date?
     /// Dernière modification de la note — absente des fiches dont la note n'a pas été
     /// touchée depuis l'ajout de ce champ.
     var noteUpdatedAt: Date?
@@ -132,6 +135,86 @@ struct AppTransaction: Identifiable, Codable, Hashable {
     var leftAfterDeposit: Decimal? {
         guard !isPaid, plan == nil, let deposit, deposit > 0 else { return nil }
         return price - deposit
+    }
+
+    // MARK: Encaissements
+
+    /// Un montant reçu (ou, pour une carte en plusieurs fois, qui tombe) à une date.
+    struct Payment: Hashable {
+        enum Kind: Hashable {
+            case full, deposit, balance
+            /// Mensualité n / total (carte ou chèque).
+            case installment(Int, Int)
+            /// Paiement en espèces noté pendant un échelonnement.
+            case cashReceipt
+        }
+        let date: Date
+        let amount: Decimal
+        let kind: Kind
+
+        var label: String {
+            switch kind {
+            case .full: return "Paiement"
+            case .deposit: return "Acompte"
+            case .balance: return "Solde"
+            case .installment(let n, let total): return "Mensualité \(n)/\(total)"
+            case .cashReceipt: return "Paiement reçu"
+            }
+        }
+    }
+
+    /// L'argent de la fiche, à la date où il arrive — c'est ce que les statistiques
+    /// comptent comme "encaissé" dans un mois :
+    /// - payé en une fois : tout le prix le jour du paiement (dépôt si payé dès la
+    ///   création) ;
+    /// - acompte : l'acompte au dépôt, le solde le jour où la fiche est marquée payée ;
+    /// - carte / chèque en plusieurs fois : l'acompte au dépôt, puis chaque mensualité le
+    ///   mois où elle tombe (10 000 ₪ en 10 fois = 1 000 ₪ par mois) ;
+    /// - espèces en plusieurs fois : l'acompte, puis chaque paiement noté à sa date.
+    var payments: [Payment] {
+        guard price > 0 else { return [] }
+        var result: [Payment] = []
+        if let plan {
+            if plan.paid > 0 { result.append(Payment(date: dropDate, amount: plan.paid, kind: .deposit)) }
+            if plan.method != .especes, let amount = installmentAmount, amount > 0 {
+                let dates = installmentDates
+                for (i, date) in dates.enumerated() {
+                    result.append(Payment(date: date, amount: amount, kind: .installment(i + 1, dates.count)))
+                }
+            } else {
+                for r in plan.received ?? [] where r.amount > 0 {
+                    result.append(Payment(date: r.date, amount: r.amount, kind: .cashReceipt))
+                }
+                // Marquée payée sans que tout soit noté : le reste, le jour du paiement.
+                let rest = price - result.reduce(0) { $0 + $1.amount }
+                if isPaid, rest > 0 {
+                    let date = paidAt ?? plan.received?.last?.date ?? (plan.count == nil ? plan.due : dropDate)
+                    result.append(Payment(date: date, amount: rest, kind: .balance))
+                }
+            }
+            return result
+        }
+        let deposit = min(depositAmount ?? 0, price)
+        if deposit > 0 {
+            result.append(Payment(date: dropDate, amount: deposit, kind: .deposit))
+            if isPaid, price > deposit {
+                result.append(Payment(date: paidAt ?? pickupDate ?? dropDate, amount: price - deposit, kind: .balance))
+            }
+        } else if isPaid {
+            result.append(Payment(date: paidAt ?? dropDate, amount: price, kind: .full))
+        }
+        return result
+    }
+
+    /// Encaissements tombés dans l'intervalle (bornes comprises).
+    func payments(in interval: DateInterval) -> [Payment] {
+        payments.filter { interval.contains($0.date) }
+    }
+
+    /// Déjà reçu à aujourd'hui (les mensualités à venir ne comptent pas).
+    var receivedToDate: Decimal {
+        let endOfToday = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: .now)) ?? .now
+        return payments.filter { $0.date < endOfToday }.reduce(0) { $0 + $1.amount }
     }
 
     // MARK: Paiement en plusieurs fois
